@@ -320,7 +320,8 @@ Insert dynamic content with `{variable}`:
 - `{duration}` - Print time
 - `{filament_grams}` - Total filament used in grams (scaled by progress for failed/stopped prints)
 - `{filament_details}` - Per-filament breakdown (e.g., "PLA: 15.2g" or "PLA: 10.0g | PETG: 5.0g")
-- `{estimated_time}` - Estimated duration
+- `{estimated_time}` - Estimated duration (e.g., "1h 23m")
+- `{eta}` - Wall-clock completion time (e.g., "15:53" or "3:53 PM"), respects your time format setting
 - `{progress}` - Completion percentage (available for failed/stopped prints)
 - `{reason}` - Failure reason
 - `{finish_photo_url}` - Camera snapshot URL (print_complete, print_failed, print_stopped)

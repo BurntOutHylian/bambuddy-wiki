@@ -34,8 +34,10 @@ Bambuddy includes common maintenance tasks:
 | **Clean Nozzle/Hotend** | Every 100 hours | All printers |
 | **Check Belt Tension** | Every 200 hours | All printers |
 | **Check PTFE Tube** | Every 500 hours | All printers |
-| **Lubricate Carbon Rods** | Every 50 hours | X1/P1/P2S |
-| **Clean Carbon Rods** | Every 100 hours | X1/P1/P2S |
+| **Lubricate Carbon Rods** | Every 50 hours | X1/P1 |
+| **Clean Carbon Rods** | Every 100 hours | X1/P1 |
+| **Lubricate Steel Rods** | Every 50 hours | P2S |
+| **Clean Steel Rods** | Every 100 hours | P2S |
 | **Lubricate Linear Rails** | Every 50 hours | A1/H2D |
 | **Clean Linear Rails** | Every 100 hours | A1/H2D |
 

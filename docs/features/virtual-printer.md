@@ -24,7 +24,7 @@ The virtual printer supports four modes:
 |------|-------------|
 | **Immediate** | Files are archived automatically when received |
 | **Review** | Files go to pending uploads for manual review before archiving |
-| **Print Queue** | Files are archived AND added to the print queue (unassigned) |
+| **Print Queue** | Files are archived AND added to the print queue (unassigned). An **Auto-dispatch** toggle controls whether incoming prints start automatically (enabled by default) or require manual dispatch. |
 | **Proxy** | Forwards traffic directly to a real printer (remote printing) |
 
 The first three are **server modes** — Bambuddy runs its own FTP/MQTT servers and receives files locally. **Proxy mode** is different — Bambuddy acts as a TLS relay to a real printer.

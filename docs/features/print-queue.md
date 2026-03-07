@@ -56,6 +56,15 @@ The print queue lets you:
 5. Optionally set schedule time
 6. Optionally configure filament mapping
 
+### From Virtual Printer
+
+When a virtual printer is set to **Print Queue** mode, prints sent from your slicer are automatically archived and added to the queue. The virtual printer's **Auto-dispatch** setting controls what happens next:
+
+- **Enabled** (default): Incoming prints start automatically when a printer is available
+- **Disabled**: Prints are added to the queue but require manual dispatch
+
+[:material-arrow-right: Virtual Printer setup](virtual-printer.md)
+
 ### AMS Filament Mapping
 
 When adding multi-color prints to the queue, you can configure which AMS slot to use for each filament:
