@@ -88,14 +88,8 @@ Calibration flow:
 
 Daemon receives and applies calibration via heartbeat, then persists through Bambuddy.
 
-!!! tip "No calibration weight available? Use coins with known weight"
-    If you do not have a calibration weight, coins are a practical fallback.
-    Example euro coin weights:
-    - `€2` = `8.50 g`
-    - `€1` = `7.50 g`
-    - `50 cent` = `7.80 g`
-    - `20 cent` = `5.74 g`
-    Use clean, undamaged coins and enter the exact total grams of the coin stack you place on the scale.
+!!! tip "Use a 1–2 kg known weight for calibration"
+    For a 5 kg load cell, calibration is more stable with heavier reference weights (about 20–40% of full scale).
 
 ---
 
@@ -129,23 +123,6 @@ sudo systemctl restart spoolbuddy
 ```
 
 If your local checkout is outdated, update it first, then run the same restart.
-
----
-
-## :material-database-import: Spoolman Import (Optional)
-
-If you already have data in Spoolman, Bambuddy includes an import script:
-
-```bash
-# Preview
-python scripts/import_spoolman.py --spoolman-url http://localhost:7912/ --bambuddy-url http://localhost:8000/ --dry-run
-
-# Import
-python scripts/import_spoolman.py --spoolman-url http://localhost:7912/ --bambuddy-url http://localhost:8000/
-
-# With API key and archived spools
-python scripts/import_spoolman.py --spoolman-url http://localhost:7912/ --bambuddy-url http://localhost:8000/ --api-key YOUR_KEY --archived
-```
 
 ---
 

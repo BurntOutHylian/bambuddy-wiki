@@ -54,12 +54,13 @@ sudo ./install.sh --mode full --port 8000 --yes
 
 ### Notes
 
-- After first boot, create API key in Bambuddy and update `spoolbuddy/.env`.
+- After first boot, create an API key in **Bambuddy -> Settings -> API Keys**, then update `/opt/bambuddy/spoolbuddy/.env` with `SPOOLBUDDY_API_KEY=bb_xxx` and restart the service (`sudo systemctl restart spoolbuddy`).
 - Good for single-printer or compact setups.
 
 ---
 
 ## :material-lightbulb: Recommendation
 
-- For Pi 2GB class devices, use **Companion Only**.
-- For Pi 4GB+ class devices, choose based on whether you want all-in-one or split architecture.
+For a full compatibility matrix and per-model guidance, see [Supported Pis](supported-pis.md).
+
+In short: 2GB Pi -> Companion Only. 4GB+ Pi -> either mode depending on your preference for all-in-one vs. split architecture.

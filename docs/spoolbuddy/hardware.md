@@ -11,7 +11,7 @@ description: What you need to build a SpoolBuddy
 
 | Component | Recommendation | Notes |
 |----------|----------------|-------|
-| **Raspberry Pi** | Pi 4/Pi 5 recommended | Must run Raspberry Pi OS Lite (Debian-based). Other models may work but are less validated. |
+| **Raspberry Pi** | Pi 4/Pi 5 recommended | Must run Raspberry Pi OS (Debian-based). Other models may work but are less validated. |
 | **Display** | LAFVIN 7\" HDMI Touch 1024x600 | Kiosk is optimized for touch interaction. This kit includes Raspberry Pi adapters (angled HDMI/micro USB style adapters). |
 | **NFC reader** | PN5180 module (SPI) | Current daemon driver targets PN5180 (`SPI`, manual CS). |
 | **Scale ADC** | NAU7802 module (I2C) | Uses I2C bus 0 (`/dev/i2c-0`, address `0x2A`). |

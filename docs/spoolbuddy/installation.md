@@ -11,7 +11,7 @@ description: Setting up SpoolBuddy on your Raspberry Pi
 
 Before running the installer:
 
-- Raspberry Pi with Raspberry Pi OS Lite (Debian-based), internet access, and `sudo`.
+- Raspberry Pi with Raspberry Pi OS (Debian-based), internet access, and `sudo`.
 - Hardware wired (or ready to wire): PN5180 NFC + NAU7802 scale + display
 - Existing Bambuddy server URL + API key (for SpoolBuddy-only mode), or plan to run full mode on the Pi
 
@@ -67,6 +67,8 @@ A reboot is required after installation for:
 ```bash
 sudo reboot
 ```
+
+If you installed full mode, create an API key in **Bambuddy -> Settings -> API Keys**, then update `/opt/bambuddy/spoolbuddy/.env` with `SPOOLBUDDY_API_KEY=bb_xxx` and restart the service (`sudo systemctl restart spoolbuddy`).
 
 ---
 
