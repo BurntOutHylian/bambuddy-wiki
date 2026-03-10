@@ -5,7 +5,7 @@ description: Multi-provider push notifications for print events
 
 # Notifications
 
-Get notified about print events via WhatsApp, Telegram, Discord, Email, and more.
+Get notified about print events via WhatsApp, Telegram, Discord, Email, Home Assistant, and more.
 
 ![Notifications Settings](../assets/settings_notifications.png){ .screenshot }
 
@@ -21,6 +21,7 @@ Get notified about print events via WhatsApp, Telegram, Discord, Email, and more
 | **Pushover** | :material-star::material-star-outline::material-star-outline: Easy | Professional push service |
 | **Telegram** | :material-star::material-star::material-star-outline: Medium | Via Telegram Bot |
 | **Email** | :material-star::material-star::material-star-outline: Medium | SMTP email |
+| **Home Assistant** | :material-star::material-star-outline::material-star-outline: Easy | Persistent notifications in HA dashboard |
 | **Webhook** | :material-star::material-star::material-star: Flexible | Custom HTTP POST |
 
 ---
@@ -148,6 +149,21 @@ Send via email:
 1. Enable 2-Factor Authentication
 2. Generate an [App Password](https://myaccount.google.com/apppasswords)
 3. Use: `smtp.gmail.com`, Port 587, STARTTLS
+
+---
+
+### Home Assistant
+
+Zero-config notifications if Home Assistant is already connected:
+
+1. Ensure HA is configured in **Settings** > **Network** > **Home Assistant**
+2. Add a notification provider and select **Home Assistant**
+3. No additional fields needed — click **Send Test** to verify
+
+Notifications appear as persistent notifications in your HA dashboard.
+
+!!! tip "Forward to Mobile"
+    Use HA automations to forward persistent notifications to your phone via the HA Companion app, WhatsApp, or any other service.
 
 ---
 
