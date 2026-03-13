@@ -219,6 +219,7 @@ For failed/stopped prints, additional fields are included:
 | **Print Completed** | Print finishes successfully (includes filament usage) |
 | **Print Failed** | Print fails or errors (includes scaled filament usage and progress) |
 | **Print Stopped** | Manual cancellation (includes scaled filament usage and progress) |
+| **First Layer Complete** | First layer finished — check adhesion remotely (includes camera snapshot) |
 | **Bed Cooled** | Bed temperature dropped below threshold after print (configurable in Settings) |
 | **Progress Milestones** | At 25%, 50%, 75% |
 
@@ -347,6 +348,12 @@ Insert dynamic content with `{variable}`:
 - `{printer}` - Printer name
 - `{error_type}` - HMS error type
 - `{error_detail}` - Error description
+
+**First Layer Complete:**
+
+- `{printer}` - Printer name
+- `{filename}` - Print filename
+- `{total_layers}` - Total layer count
 
 **Bed Cooled:**
 
