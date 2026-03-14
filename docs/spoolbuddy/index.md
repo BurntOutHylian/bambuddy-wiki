@@ -7,9 +7,6 @@ description: Optional Raspberry Pi add-on for NFC-based spool identification and
 
 SpoolBuddy is an optional companion hardware add-on that brings NFC-powered spool management to your Bambuddy setup. Using a Raspberry Pi and an NFC reader, you can tag your filament spools with NFC stickers and instantly identify them by tapping.
 
-!!! info "Community project"
-    SpoolBuddy documentation is being written by our contributors. Want to help? Join us on [Discord](https://discord.gg/aFS3ZfScHM)!
-
 SpoolBuddy connects a Raspberry Pi with an NFC reader to your Bambuddy instance, enabling:
 
 - **Instant spool identification** &mdash; Tap a spool to pull up its details.
@@ -36,7 +33,7 @@ Practical bill of materials for a complete SpoolBuddy build.
 
 <div class="feature-card" markdown>
 ### [:material-vector-polyline: Wiring Diagrams](wiring-diagrams.md)
-Pin maps and ASCII wiring diagrams for PN5180 NFC and NAU7802 scale connections. *(Work in progress — community contributions welcome.)*
+Pin maps, ASCII wiring diagrams, and a Fritzing-style visual overview for PN5180 NFC and NAU7802 scale connections to the Raspberry Pi GPIO header.
 </div>
 
 <div class="feature-card" markdown>

@@ -15,9 +15,6 @@ Before running the installer:
 - Hardware wired (or ready to wire): PN5180 NFC + NAU7802 scale + display
 - Existing Bambuddy server URL + API key (for SpoolBuddy-only mode), or plan to run full mode on the Pi
 
-!!! warning "Raspberry Pi only"
-    The installer validates Raspberry Pi hardware and is intended for Pi systems only.
-
 ---
 
 ## :material-rocket: Recommended Install Method
@@ -68,7 +65,7 @@ A reboot is required after installation for:
 sudo reboot
 ```
 
-If you installed full mode, create an API key in **Bambuddy -> Settings -> API Keys**, then update `/opt/bambuddy/spoolbuddy/.env` with `SPOOLBUDDY_API_KEY=bb_xxx` and restart the service (`sudo systemctl restart spoolbuddy`).
+If you installed full mode, create an API key in **Bambuddy → Settings → [API Keys](../features/api-keys.md)**, then update `/opt/bambuddy/spoolbuddy/.env` with `SPOOLBUDDY_API_KEY=bb_xxx` and restart the service (`sudo systemctl restart spoolbuddy`).
 
 ---
 

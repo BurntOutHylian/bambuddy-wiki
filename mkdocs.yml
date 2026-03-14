@@ -166,13 +166,13 @@ nav:
 
   - SpoolBuddy:
     - spoolbuddy/index.md
-    - Materials Required: spoolbuddy/materials.md
-    - Deployment Modes: spoolbuddy/deployment-modes.md
-    - Supported Pis: spoolbuddy/supported-pis.md
-    - Wiring Diagrams: spoolbuddy/wiring-diagrams.md
     - Hardware Requirements: spoolbuddy/hardware.md
+    - Materials Required: spoolbuddy/materials.md
+    - Wiring Diagrams: spoolbuddy/wiring-diagrams.md
     - Installation: spoolbuddy/installation.md
+    - Deployment Modes: spoolbuddy/deployment-modes.md
     - Configuration: spoolbuddy/configuration.md
+    - Supported Pis: spoolbuddy/supported-pis.md
 
   - Reference:
     - reference/index.md
