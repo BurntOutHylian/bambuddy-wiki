@@ -589,4 +589,4 @@ A persistent toast notification shows real-time dispatch progress:
     Check estimated durations when scheduling to avoid printer conflicts.
 
 !!! tip "Auto-Drying Between Prints"
-    Enable [queue auto-drying](ams.md#queue-auto-drying) to automatically dry filament during idle gaps between scheduled prints. Keeps filament in optimal condition for long print runs.
+    Enable [queue auto-drying](ams.md#queue-auto-drying) to automatically dry filament during idle gaps between scheduled prints. For printers without scheduled prints, [ambient drying](ams.md#ambient-drying) keeps filament dry on any idle printer automatically.

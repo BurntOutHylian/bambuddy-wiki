@@ -1,6 +1,6 @@
 ---
 title: AMS, Humidity & Drying
-description: Monitor AMS and AMS-HT filament systems, manual and automatic remote drying, configurable presets
+description: Monitor AMS and AMS-HT filament systems, manual and automatic remote drying, ambient drying, configurable presets
 ---
 
 # AMS & Humidity Monitoring
@@ -184,7 +184,7 @@ The printer firmware reports power constraints via the `dry_sf_reason` field per
 | Already Drying | 6 | Drying session already active |
 | Upgrading | 7 | Firmware update in progress |
 
-When a power constraint is detected, the :material-fire: drying button is **disabled** and shows a "Power required" tooltip. This applies to both manual and auto-drying — the scheduler skips AMS units with active `dry_sf_reason` entries.
+When a power constraint is detected, the :material-fire: drying button is **disabled** and shows a "Power required" tooltip. This applies to manual drying, queue auto-drying, and ambient drying — the scheduler skips AMS units with active `dry_sf_reason` entries.
 
 !!! warning "PSU Not Connected"
     If you see the drying button greyed out with a "Power required" tooltip, connect the external power adapter to your AMS unit. This is the most common reason drying cannot start.
@@ -226,7 +226,7 @@ When the AMS encounters a power-related issue, the printer reports it as an HMS 
 4. Click **Start**
 
 !!! tip "Filament Presets"
-    Temperature and duration defaults come from BambuStudio's official filament profiles. You can customize them in **Settings** > **AMS Display Thresholds** > **Drying Presets**. These presets are shared between manual drying and queue auto-drying.
+    Temperature and duration defaults come from BambuStudio's official filament profiles. You can customize them in **Settings** > **AMS Display Thresholds** > **Drying Presets**. These presets are shared between manual drying, queue auto-drying, and ambient drying.
 
 ### Monitoring Drying Progress
 
@@ -310,11 +310,57 @@ Auto-drying is stopped automatically when:
 - Supported printer firmware (see [firmware requirements](#printer-firmware-requirements) above)
 - Humidity above the Fair threshold
 
+!!! note "No Scheduled Prints?"
+    If you want drying to run on idle printers regardless of whether prints are scheduled, see [Ambient Drying](#ambient-drying) below.
+
+---
+
+## :material-fire-alert: Ambient Drying
+
+Automatically dry filament on any idle printer whenever AMS humidity exceeds the configured threshold — no scheduled prints required. While [queue auto-drying](#queue-auto-drying) only activates when prints are scheduled, ambient drying keeps filament dry on all idle printers at all times.
+
+### How It Works
+
+1. The scheduler continuously monitors all idle printers
+2. For each AMS unit, it reads the current humidity level
+3. If humidity exceeds the **Fair (orange)** threshold from Settings, drying is triggered
+4. The drying temperature and duration are determined by the loaded filament types using the configured [drying presets](#configurable-drying-presets)
+5. After a minimum of **30 minutes**, humidity is re-checked — if it drops to or below the threshold, drying is stopped early
+
+Unlike queue auto-drying, ambient drying does not require any scheduled queue items. It runs whenever a printer is idle and its AMS humidity is above the threshold.
+
+### Enabling Ambient Drying
+
+1. Go to **Settings** > **Print Queue**
+2. Find **Ambient Drying**
+3. Enable **Enable ambient drying**
+
+### Using Both Modes Together
+
+Ambient drying and queue auto-drying can be enabled simultaneously. They complement each other:
+
+| Mode | Triggers when | Stops when |
+|------|---------------|------------|
+| **Queue auto-drying** | Printer is idle with scheduled prints pending | Humidity drops below threshold, or next print is ready to start |
+| **Ambient drying** | Printer is idle (no scheduled prints required) | Humidity drops below threshold |
+
+When both are enabled and a printer has scheduled prints, queue auto-drying takes precedence (since it is aware of print scheduling and blocking/non-blocking behavior). On printers with no scheduled prints, ambient drying takes over.
+
+### Requirements
+
+- AMS 2 Pro or AMS-HT unit (original AMS does not support drying)
+- Supported printer firmware (see [firmware requirements](#printer-firmware-requirements) above)
+- Humidity above the Fair threshold
+- No active power constraints on the AMS unit (see [power supply requirements](#power-supply-requirements))
+
+!!! tip "Print Farm Use Case"
+    Ambient drying is particularly useful for print farms where printers may sit idle for extended periods. Rather than letting humidity build up, Bambuddy keeps filament dry on every idle printer automatically.
+
 ---
 
 ## :material-tune: Configurable Drying Presets
 
-Customize the drying temperature and duration for each filament type. These presets are used by both [manual drying](#starting-a-drying-session) and [queue auto-drying](#queue-auto-drying).
+Customize the drying temperature and duration for each filament type. These presets are used by both [manual drying](#starting-a-drying-session), [queue auto-drying](#queue-auto-drying), and [ambient drying](#ambient-drying).
 
 ### Default Presets
 
@@ -524,4 +570,4 @@ Sync AMS slots with Spoolman for complete filament tracking:
     Consider AMS-HT for moisture-sensitive materials like Nylon, PC, and PETG.
 
 !!! tip "Auto-Drying Between Prints"
-    Enable queue auto-drying to keep filament dry during long print queues. The scheduler uses the Fair humidity threshold as the trigger point — set it to match your environment.
+    Enable queue auto-drying to keep filament dry during long print queues, or enable ambient drying to keep filament dry on all idle printers — even when no prints are scheduled. Both use the Fair humidity threshold as the trigger point.
