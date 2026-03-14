@@ -25,7 +25,7 @@ MJPEG live video streaming and snapshots from your printer's built-in camera.
 
 <div class="feature-card" markdown>
 ### [:material-water-percent: AMS & Humidity](ams.md)
-Monitor AMS slot status, humidity levels, and temperature with historical charts.
+Monitor AMS slot status, humidity levels, and temperature. Remote manual drying, queue auto-drying, and configurable drying presets.
 </div>
 
 <div class="feature-card" markdown>

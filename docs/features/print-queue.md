@@ -587,3 +587,6 @@ A persistent toast notification shows real-time dispatch progress:
 
 !!! tip "Estimated Times"
     Check estimated durations when scheduling to avoid printer conflicts.
+
+!!! tip "Auto-Drying Between Prints"
+    Enable [queue auto-drying](ams.md#queue-auto-drying) to automatically dry filament during idle gaps between scheduled prints. Keeps filament in optimal condition for long print runs.
