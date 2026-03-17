@@ -256,8 +256,38 @@ Bambuddy includes customizable notification templates for:
 
 - **Welcome Email** — Sent when a new user account is created
 - **Password Reset** — Sent when a password is reset (by admin or self-service)
+- **User Print Started** — Sent when a user's print job begins
+- **User Print Completed** — Sent when a user's print job finishes successfully
+- **User Print Failed** — Sent when a user's print job fails
+- **User Print Stopped** — Sent when a user's print job is cancelled
 
 Templates can be edited in **Settings** → **Email** → **Templates**.
+
+### Per-User Email Notifications
+
+When Advanced Auth is enabled, individual users can opt in to email notifications for their own print jobs. This is separate from the global notification system — it only emails the user who submitted the print.
+
+#### Enabling User Notifications
+
+1. Go to **Settings** → **Notifications** tab
+2. Enable **User Notifications**
+3. SMTP must be configured (see [Setting Up SMTP](#setting-up-smtp))
+
+#### Managing Your Preferences
+
+1. Click **Notifications** in the sidebar (visible when User Notifications are enabled)
+2. Toggle notifications for each event type:
+   - **Print Job Starts** — Email when your print begins
+   - **Print Job Finishes** — Email when your print completes successfully
+   - **Print Errors** — Email when your print fails
+   - **Print Job Stops** — Email when your print is cancelled
+3. Click **Save**
+
+!!! info "Requires Email Address"
+    Users must have an email address on their account to receive notifications. The email address can be set by an administrator in User Management.
+
+!!! tip "Permission Required"
+    The `notifications:user_email` permission is required to access the Notifications page. Administrators and Operators have this by default. Viewers do not.
 
 ### Enabling/Disabling
 

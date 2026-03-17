@@ -463,3 +463,35 @@ Useful during maintenance or troubleshooting.
 
 !!! tip "Plate Not Empty Bypasses Quiet Hours"
     Plate detection notifications are always sent immediately, even during quiet hours or when digest mode is enabled. This ensures you're alerted to potential issues before a print starts.
+
+---
+
+## :material-account-bell: Per-User Email Notifications
+
+When [Advanced Authentication](authentication.md#per-user-email-notifications) is enabled, individual users can receive email notifications for their own print jobs. This is separate from the provider-based notification system above — it sends emails directly to the user who submitted the print.
+
+### Requirements
+
+- Advanced Authentication must be enabled
+- SMTP must be configured
+- "User Notifications" must be enabled in **Settings** → **Notifications**
+- User must have an email address on their account
+- User must have the `notifications:user_email` permission (Administrators and Operators by default)
+
+### Supported Events
+
+| Event | Description |
+|-------|-------------|
+| **Print Started** | Your print job has begun |
+| **Print Completed** | Your print job finished successfully |
+| **Print Failed** | Your print job encountered an error |
+| **Print Stopped** | Your print job was cancelled |
+
+### Setup
+
+1. Enable User Notifications in **Settings** → **Notifications**
+2. Click **Notifications** in the sidebar
+3. Toggle each event type on or off
+4. Click **Save**
+
+See [Authentication → Per-User Email Notifications](authentication.md#per-user-email-notifications) for full details.
