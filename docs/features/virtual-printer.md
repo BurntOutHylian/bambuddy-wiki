@@ -48,14 +48,14 @@ Each virtual printer uses these ports on its dedicated bind IP:
 | Bind | 3000, 3002 | TCP | Slicer bind/detect handshake (required for all modes) |
 | SSDP | 2021 | UDP | Printer discovery (same LAN only, not needed for VPN/remote) |
 | MQTT | 8883 | TCP/TLS | Printer communication |
-| FTPS | 990 | TCP/TLS | File transfer control (redirected to 9990 internally) |
+| FTPS | 990 | TCP/TLS | File transfer control |
 | FTP Data | 50000-50100 | TCP | File transfer passive data |
 
 !!! note "Dual Bind Ports"
     Different versions of BambuStudio and OrcaSlicer use different ports for the bind/detect handshake. Bambuddy listens on **both 3000 and 3002** to support all slicer versions.
 
-!!! note "Port 990 Redirect"
-    The FTP server listens on port **9990** internally. An iptables rule redirects external connections from port 990 (the standard FTPS port that slicers connect to) to 9990. This is required for **all modes** on native and Docker host-mode installs.
+!!! note "Port 990"
+    The FTP server binds directly to port 990 (the standard FTPS port). This requires `CAP_NET_BIND_SERVICE` capability for the process, or running as root. The systemd service file and Docker image already include this capability.
 
 ---
 
@@ -155,34 +155,16 @@ Choose your platform below for specific setup instructions.
 
 ### Linux (Native Installation)
 
-Port 990 is a privileged port. You need iptables rules to redirect it:
+Port 990 is a privileged port. The process needs `CAP_NET_BIND_SERVICE` to bind to it.
 
-```bash
-# Redirect incoming traffic on port 990 to 9990
-sudo iptables -t nat -A PREROUTING -p tcp --dport 990 -j REDIRECT --to-port 9990
-
-# Redirect localhost traffic on port 990 to 9990
-sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport 990 -j REDIRECT --to-port 9990
+**For systemd services**, add to the service file:
+```ini
+AmbientCapabilities=CAP_NET_BIND_SERVICE
 ```
 
-**Make rules persistent:**
-
-=== "Debian/Ubuntu"
-    ```bash
-    sudo apt install iptables-persistent
-    sudo netfilter-persistent save
-    ```
-
-=== "Fedora/RHEL"
-    ```bash
-    sudo dnf install iptables-services
-    sudo service iptables save
-    ```
-
-=== "Arch Linux"
-    ```bash
-    sudo iptables-save > /etc/iptables/iptables.rules
-    sudo systemctl enable iptables
+**For manual runs**, grant the capability to the Python binary:
+```bash
+sudo setcap cap_net_bind_service=+ep $(readlink -f $(which python3))
     ```
 
 **Firewall rules (if using UFW):**
@@ -193,7 +175,6 @@ sudo ufw allow 3002/tcp  # Bind/detect
 sudo ufw allow 2021/udp  # SSDP
 sudo ufw allow 8883/tcp  # MQTT
 sudo ufw allow 990/tcp   # FTPS
-sudo ufw allow 9990/tcp  # FTPS internal
 sudo ufw allow 50000:50100/tcp  # FTP passive data
 ```
 
@@ -205,7 +186,6 @@ sudo firewall-cmd --permanent --add-port=3002/tcp  # Bind/detect
 sudo firewall-cmd --permanent --add-port=2021/udp  # SSDP
 sudo firewall-cmd --permanent --add-port=8883/tcp  # MQTT
 sudo firewall-cmd --permanent --add-port=990/tcp   # FTPS
-sudo firewall-cmd --permanent --add-port=9990/tcp  # FTPS internal
 sudo firewall-cmd --permanent --add-port=50000-50100/tcp  # FTP passive data
 sudo firewall-cmd --reload
 ```
@@ -238,19 +218,8 @@ volumes:
   bambuddy_logs:
 ```
 
-**You still need iptables rules on the host** (for the FTP 990 → 9990 redirect):
-
-```bash
-sudo iptables -t nat -A PREROUTING -p tcp --dport 990 -j REDIRECT --to-port 9990
-sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport 990 -j REDIRECT --to-port 9990
-```
-
-**Make rules persistent (Debian/Ubuntu):**
-
-```bash
-sudo apt install iptables-persistent
-sudo netfilter-persistent save
-```
+!!! note "No iptables redirect needed"
+    The FTP server binds directly to port 990 inside the container. With `network_mode: host`, no port mapping or iptables redirect is required.
 
 **Firewall rules (if using UFW):**
 
@@ -260,7 +229,6 @@ sudo ufw allow 3002/tcp  # Bind/detect
 sudo ufw allow 2021/udp  # SSDP
 sudo ufw allow 8883/tcp  # MQTT
 sudo ufw allow 990/tcp   # FTPS
-sudo ufw allow 9990/tcp  # FTPS internal
 sudo ufw allow 50000:50100/tcp  # FTP passive data
 ```
 
@@ -272,7 +240,6 @@ sudo firewall-cmd --permanent --add-port=3002/tcp  # Bind/detect
 sudo firewall-cmd --permanent --add-port=2021/udp  # SSDP
 sudo firewall-cmd --permanent --add-port=8883/tcp  # MQTT
 sudo firewall-cmd --permanent --add-port=990/tcp   # FTPS
-sudo firewall-cmd --permanent --add-port=9990/tcp  # FTPS internal
 sudo firewall-cmd --permanent --add-port=50000-50100/tcp  # FTP passive data
 sudo firewall-cmd --reload
 ```
@@ -298,7 +265,7 @@ services:
       - "${PORT:-8000}:8000"           # Web UI
       - "3000:3000"                    # Bind/detect
       - "3002:3002"                    # Bind/detect (alt port)
-      - "990:9990"                     # FTPS (host 990 → container 9990)
+      - "990:990"                      # FTPS
       - "8883:8883"                    # MQTT
       - "50000-50100:50000-50100"      # FTP passive data
     volumes:
@@ -324,63 +291,28 @@ volumes:
 ### Unraid
 
 1. Set **Network Type** to `host` in container settings
-
-2. Add iptables rules via Unraid terminal:
-   ```bash
-   iptables -t nat -A PREROUTING -p tcp --dport 990 -j REDIRECT --to-port 9990
-   iptables -t nat -A OUTPUT -o lo -p tcp --dport 990 -j REDIRECT --to-port 9990
-   ```
-
-3. Make rules persistent by adding to `/boot/config/go`:
-   ```bash
-   echo "iptables -t nat -A PREROUTING -p tcp --dport 990 -j REDIRECT --to-port 9990" >> /boot/config/go
-   echo "iptables -t nat -A OUTPUT -o lo -p tcp --dport 990 -j REDIRECT --to-port 9990" >> /boot/config/go
-   ```
+2. No additional configuration needed — the FTP server binds directly to port 990
 
 ---
 
 ### Synology NAS
 
 1. Use **Host Network** in Container Manager
-
-2. SSH into your NAS and add iptables rules:
-   ```bash
-   sudo iptables -t nat -A PREROUTING -p tcp --dport 990 -j REDIRECT --to-port 9990
-   ```
-
-3. Create a scheduled task to restore rules on boot:
-   - Control Panel → Task Scheduler → Create → Triggered Task → User-defined script
-   - Event: Boot-up
-   - Script: `iptables -t nat -A PREROUTING -p tcp --dport 990 -j REDIRECT --to-port 9990`
+2. No additional configuration needed — the FTP server binds directly to port 990
 
 ---
 
 ### TrueNAS SCALE
 
 1. Use **Host Network** when creating the app/container
-
-2. Add iptables rules via shell:
-   ```bash
-   iptables -t nat -A PREROUTING -p tcp --dport 990 -j REDIRECT --to-port 9990
-   iptables -t nat -A OUTPUT -o lo -p tcp --dport 990 -j REDIRECT --to-port 9990
-   ```
+2. No additional configuration needed — the FTP server binds directly to port 990
 
 ---
 
 ### Proxmox LXC
 
-1. Enable **nesting** in container options (for iptables support)
-
-2. Inside the LXC:
-   ```bash
-   apt install iptables
-   iptables -t nat -A PREROUTING -p tcp --dport 990 -j REDIRECT --to-port 9990
-   iptables -t nat -A OUTPUT -o lo -p tcp --dport 990 -j REDIRECT --to-port 9990
-
-   # Make persistent
-   apt install iptables-persistent
-   netfilter-persistent save
-   ```
+1. No special configuration needed — the FTP server binds directly to port 990
+2. Ensure the LXC container runs Bambuddy as root or with `CAP_NET_BIND_SERVICE`
 
 ---
 
@@ -900,18 +832,14 @@ For setups where Bambuddy has interfaces on two networks (e.g., printer on LAN A
    nc -zv BAMBUDDY_IP 3000
    nc -zv BAMBUDDY_IP 3002
    ```
-3. **Check iptables rules are active** (for FTP):
-   ```bash
-   sudo iptables -t nat -L -n | grep 990
-   ```
-4. **Check firewall** — ports 3000/tcp, 3002/tcp, 2021/udp, 8883/tcp, 990/tcp, 50000-50100/tcp must be open
+3. **Check firewall** — ports 3000/tcp, 3002/tcp, 2021/udp, 8883/tcp, 990/tcp, 50000-50100/tcp must be open
 5. **Same network?** — SSDP discovery only works on the same LAN/subnet. Use "bind with access code" for VPN, remote, or Docker bridge setups
 
 ### FTP Error / Connection Reset
 
-1. **Verify iptables rules** are correctly configured (990 → 9990 redirect)
-2. **Check permissions** on the uploads directory
-3. **Check no other FTP server** is using port 990 or 9990
+1. **Check permissions** on the uploads directory
+2. **Check no other FTP server** is using port 990
+3. **Verify `CAP_NET_BIND_SERVICE`** — the process needs this capability to bind to port 990
 4. **Review logs** for specific error messages
 
 ### "Wrong Printer Model" Error
