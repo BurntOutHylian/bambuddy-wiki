@@ -27,7 +27,7 @@ The virtual printer supports four modes:
 | **Print Queue** | Files are archived AND added to the print queue (unassigned). An **Auto-dispatch** toggle controls whether incoming prints start automatically (enabled by default) or require manual dispatch. |
 | **Proxy** | Forwards traffic directly to a real printer (remote printing) |
 
-The first three are **server modes** — Bambuddy runs its own FTP/MQTT servers and receives files locally. **Proxy mode** is different — Bambuddy acts as a TLS relay to a real printer.
+The first three are **server modes** — Bambuddy runs its own FTP/MQTT servers and receives files locally. **Proxy mode** is different — Bambuddy uses transparent TCP proxying to forward traffic to a real printer, with end-to-end TLS between the slicer and printer for most protocols.
 
 ## Use Cases
 
@@ -703,17 +703,17 @@ Unlike the server modes that archive files locally, **Proxy Mode** forwards your
 | Protocol | Bambuddy Listen Port | Printer Port | Purpose |
 |----------|---------------------|--------------|---------|
 | Bind | 3000, 3002 | — (local) | Slicer bind/detect handshake (served locally) |
-| MQTT/TLS | 8883 | 8883 | Printer control & status (TLS, IP rewriting) |
-| File Transfer | 6000 | 6000 | Verify job & file upload tunnel (TLS) |
-| RTSP Camera | 322 | 322 | Camera streaming for X1/H2/P2 series (TLS) |
-| FTP/FTPS | 990 | 990 | File transfer control (TLS) |
-| FTP Data | 50000-50100 | dynamic | File transfer data |
+| MQTT/TLS | 8883 | 8883 | Printer control & status (TLS-terminated, IP rewriting) |
+| File Transfer | 6000 | 6000 | File transfer tunnel (transparent proxy, end-to-end TLS) |
+| RTSP Camera | 322 | 322 | Camera streaming (transparent proxy, end-to-end TLS) |
+| FTP/FTPS | 990 | 990 | FTP control (transparent proxy, end-to-end TLS) |
+| FTP Data | 50000-50100 | dynamic | FTP passive data (transparent proxy) |
 
 ### Key Benefits
 
 | Feature | Description |
 |---------|-------------|
-| :lock: **TLS-encrypted control channels** | MQTT, FTP, file transfer, and camera all TLS-encrypted |
+| :lock: **TLS-encrypted control channels** | End-to-end TLS for FTP, file transfer, and camera; MQTT TLS-terminated for IP rewriting |
 | :globe_with_meridians: **No cloud dependency** | Your data never touches third-party servers |
 | :key: **Uses printer's credentials** | No additional passwords — use your printer's access code |
 | :zap: **Full protocol support** | FTP, MQTT, file transfer tunnel, camera, and bind protocol |
@@ -956,11 +956,11 @@ If the slicer connects and shows printer status but shows a connection dialog wh
 ### Security
 
 - **Bind protocol** (ports 3000, 3002): In proxy mode, Bambuddy responds with the VP's own identity (not forwarded to printer). Unencrypted TCP — transmits printer identity only, no sensitive data
-- **MQTT control channel**: Fully TLS-encrypted (TLS 1.2). In proxy mode, printer IP addresses in MQTT payloads are rewritten to prevent the slicer from bypassing the proxy
-- **File transfer tunnel** (port 6000): Fully TLS-encrypted (TLS 1.2)
-- **Camera streaming** (port 322): Fully TLS-encrypted RTSP (X1/H2/P2 series)
-- **FTP control channel**: Fully TLS-encrypted (implicit FTPS, TLS 1.2)
-- **FTP data channel**: In proxy mode, encrypted between Bambuddy and printer (depends on printer model). **Not encrypted** between slicer and Bambuddy due to a Bambu Studio limitation. Use a VPN for end-to-end data encryption
+- **MQTT control channel**: TLS-terminated at Bambuddy (TLS 1.2). In proxy mode, printer IP addresses in MQTT payloads are rewritten to prevent the slicer from bypassing the proxy
+- **File transfer tunnel** (port 6000): End-to-end TLS (transparent proxy)
+- **Camera streaming** (port 322): End-to-end TLS RTSP (transparent proxy)
+- **FTP control channel**: End-to-end TLS (transparent proxy)
+- **FTP data channel**: In proxy mode, transparent proxy — encryption depends on slicer/printer negotiation. Bambu Studio does not encrypt the data channel. Use a VPN for end-to-end data encryption
 - Self-signed certificates are auto-generated (shared CA persists, per-instance device cert regenerates per serial)
 - Access code authentication required for all connections (8 characters)
 - Certificates stored in `virtual_printer/certs/` (shared CA) and `virtual_printer/certs/{id}/` (per-instance certs)
