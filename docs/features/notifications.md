@@ -206,7 +206,7 @@ For failed/stopped prints, additional fields are included:
 }
 ```
 
-When a camera snapshot is available (e.g. First Layer Complete, Print Started), the payload includes a base64-encoded JPEG image:
+When a camera snapshot is available (e.g. First Layer Complete, Print Started, Print Completed), the payload includes a base64-encoded JPEG image:
 
 ```json
 {
