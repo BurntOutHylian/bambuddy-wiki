@@ -15,7 +15,7 @@ The in-app bug report feature provides a quick way to report issues:
 
 - **One-click access** — Floating bug button in the bottom-right corner
 - **Screenshot support** — Upload, paste from clipboard, or drag & drop images
-- **Automatic diagnostics** — System info and debug logs collected automatically
+- **Interactive debug capture** — Start logging, reproduce the issue at your own pace, stop & submit
 - **Privacy-first** — All sensitive data is sanitized before submission
 - **GitHub integration** — Reports create GitHub issues automatically
 
@@ -27,20 +27,19 @@ The in-app bug report feature provides a quick way to report issues:
 2. **Describe the issue** — What went wrong? Steps to reproduce?
 3. **Add a screenshot** (optional) — Upload a file, paste from clipboard (Ctrl+V), or drag & drop an image onto the upload area. Images are automatically compressed to JPEG.
 4. **Add your email** (optional) — If provided, your email will be included in a collapsed section of the GitHub issue so the maintainer can follow up.
-5. Click **Submit**
+5. Click **Start Debug Logging**
 
 ---
 
-## :material-file-search: What Happens After Submit
+## :material-bug-play: Debug Log Capture
 
-After you click Submit, Bambuddy automatically:
+After clicking Start Debug Logging, a 3-step guided flow begins:
 
-1. **Enables debug logging** temporarily (if not already enabled)
-2. **Queries all connected printers** for fresh status data
-3. **Waits 30 seconds** to collect diagnostic logs (a countdown timer is shown)
-4. **Sanitizes all logs** — Removes printer names, serial numbers, IP addresses, credentials, and other sensitive data
-5. **Submits to GitHub** — Creates an issue with your description, screenshot, system info, and sanitized logs
-6. **Restores normal logging** if debug was not previously enabled
+1. **:material-check-circle: Debug logging enabled** — Bambuddy enables debug-level logging and queries all connected printers for fresh status data
+2. **:material-circle: Reproduce the issue now** — An elapsed timer counts up while you reproduce the bug at your own pace. Take as long as you need (auto-stops after 5 minutes).
+3. **:material-circle-outline: Stop & submit report** — Click "Stop & Submit" when you're done reproducing
+
+The logs are collected, sanitized, and submitted along with your description, screenshot, and system info.
 
 ---
 
