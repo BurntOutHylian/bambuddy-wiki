@@ -47,6 +47,7 @@ The status summary bar at the top of the Printers page provides an at-a-glance o
 | :material-circle:{ style="color: #4caf50" } **X available** | Idle printers ready to accept a print (always shown, even when 0) |
 | :material-circle:{ style="color: #4caf50" } **X printing** | Printers currently running a job (pulsing dot) |
 | :material-circle:{ style="color: #9e9e9e" } **X offline** | Disconnected printers |
+| :material-circle:{ style="color: #f44336" } **X problem** | Connected printers with active HMS errors (only shown when > 0) |
 
 ### Next Available Printer
 
@@ -116,14 +117,37 @@ A **print speed badge** (:material-gauge:) also appears in this row, showing the
 
 Fan speeds update in real-time via WebSocket alongside temperatures.
 
+### Compact Mode Status Pip
+
+In compact (Small) view, each printer card shows a small colored status pip:
+
+| Color | Meaning |
+|:-----:|---------|
+| :material-circle:{ style="color: #4caf50" } Green | Connected, no issues |
+| :material-circle:{ style="color: #f44336" } Red | Offline, or fatal/serious HMS error (severity ≤ 2) |
+| :material-circle:{ style="color: #ff9800" } Amber | HMS warning (common/info severity) |
+
+Hover over the pip to see the number of active HMS errors.
+
 ### Print Progress
 
 When a print is active, you'll see:
 
-- **Progress bar** - Visual completion percentage
+- **Progress bar** - Visual completion percentage (turns amber when paused)
 - **Current layer** - Layer X of Y
 - **Time remaining** - Estimated time to completion
 - **Filament used** - Grams consumed so far
+
+### Status Sorting
+
+When sorting by status, printers are ordered by priority:
+
+1. **HMS errors** — printers with active HMS errors appear first
+2. **Printing** — printers running a job
+3. **Idle** — connected with no active job
+4. **Offline** — disconnected printers
+
+This makes it easy to spot printers that need attention in large print farms.
 
 ---
 

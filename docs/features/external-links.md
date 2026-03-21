@@ -172,6 +172,35 @@ Quick access to model sites:
 
 ---
 
+## :material-sort: Admin Default Menu Order
+
+Admins can set a default sidebar navigation order that applies to all users who haven't customized their own.
+
+### Setting a Default
+
+1. Arrange the sidebar items in your preferred order (drag to reorder)
+2. Go to **Settings** > **General** > **Sidebar Order**
+3. Toggle **Set Default** on
+
+The current sidebar order is saved as the default for all users.
+
+### How It Works
+
+| Scenario | Behavior |
+|----------|----------|
+| **New user** | Automatically gets the admin-set order |
+| **User hasn't customized** | Gets the admin-set order on next page load |
+| **User has customized** | Keeps their own order (admin default is not re-applied) |
+| **Admin toggles off** | Default is cleared; existing user orders are unchanged |
+
+!!! note "Permission Required"
+    The Set Default toggle is only visible to users with **Settings: Update** permission (`settings:update`).
+
+!!! tip "One-Time Application"
+    The default order is applied once per user. If you update the default, users who already received a previous default will not be affected. To re-apply, users can click **Reset** on their sidebar order first.
+
+---
+
 ## :material-keyboard: Keyboard Shortcuts
 
 External links can be accessed via keyboard:
