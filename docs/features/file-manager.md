@@ -226,7 +226,7 @@ Print files directly from File Manager with full configuration options.
 Select multiple printers to send the same file to all of them at once—ideal for print farms.
 
 !!! tip "Plate Selection"
-    For multi-plate 3MF files (exported as "All sliced file" from the slicer), you'll see a plate selection grid with thumbnails. Select the plate you want to print.
+    For multi-plate 3MF files (exported as "All sliced file" from the slicer), you'll see a plate selection grid with thumbnails. Select the plate you want to print. When adding to queue, you can select multiple plates at once using checkboxes.
 
 ---
 

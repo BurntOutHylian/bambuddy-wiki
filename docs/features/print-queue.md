@@ -92,11 +92,11 @@ For 3MF files with multiple plates:
 4. Click to select the plate to print
 5. Filament requirements update to show selected plate's filaments
 
-!!! tip "Queue All Plates"
-    When adding a multi-plate 3MF file to the queue, a **"Queue All N Plates"** toggle appears in the plate selector. Activating it adds every plate as a separate queue entry (one per plate per selected printer), each individually editable after creation. This toggle is only available in add-to-queue mode.
+!!! tip "Select Multiple Plates"
+    When adding a multi-plate 3MF file to the queue, each plate has a **checkbox** for multi-select. Click individual plates to toggle them, or use the **"Select All / Deselect All"** button to quickly select every plate. Each selected plate is added as a separate queue entry (one per plate per selected printer), individually editable after creation. Multi-select is only available in add-to-queue mode — reprint and edit modes remain single-select.
 
 !!! tip "Single Plate per Queue Item"
-    Each queue item prints one plate. To print multiple plates from the same file, add the file to queue multiple times and select different plates, or use the "Queue All Plates" toggle above.
+    Each queue item prints one plate. To print multiple plates from the same file, select multiple plates when adding to queue, or add the file multiple times and select different plates each time.
 
 ### Print Options
 
