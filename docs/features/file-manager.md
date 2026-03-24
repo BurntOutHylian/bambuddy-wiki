@@ -14,6 +14,7 @@ Browse, download, and manage files in your local Bambuddy library.
 The File Manager lets you:
 
 - **Browse** files in your local library
+- **Mount external folders** from NAS, USB, or network shares
 - **Upload** files including ZIP archives
 - **Download** files to your computer
 - **Rename** files and folders
@@ -323,6 +324,74 @@ Rename files and folders directly in the File Manager.
 
 ---
 
+## :material-folder-network: External Folder Mounting
+
+Mount host directories (NAS shares, USB drives, network storage) into the File Manager without copying files.
+
+### Setting Up an External Folder
+
+**Step 1: Bind-mount the directory into Docker**
+
+Add the host directory as a volume in your `docker-compose.yml`:
+
+```yaml
+services:
+  bambuddy:
+    volumes:
+      - /mnt/nas/3d-prints:/external/prints:ro
+```
+
+Restart the container after changing volumes.
+
+**Step 2: Link the folder in Bambuddy**
+
+1. Open **File Manager**
+2. Click **Link External** in the toolbar
+3. Enter a display name (e.g., "NAS Prints")
+4. Enter the container path (e.g., `/external/prints`)
+5. Choose options:
+    - **Read Only** (default) — prevents uploads and deletions
+    - **Show hidden files** — includes dotfiles in scan
+6. Click **Link Folder**
+
+The folder is automatically scanned and files appear immediately.
+
+### Scanning & Refreshing
+
+External folders are indexed on creation. To pick up new or removed files:
+
+1. Click on the external folder in the sidebar
+2. Click the **Scan** button in the info bar
+3. New files are added, deleted files are removed from the index
+
+!!! info "Files Are Not Copied"
+    Bambuddy indexes external files into its database but reads them directly from the original path. No disk space is used for file copies. Thumbnails for 3MF, STL, and gcode files are generated and stored locally.
+
+### Read-Only Protection
+
+When **Read Only** is enabled (default):
+
+- Uploads to the folder are blocked (403)
+- Moving files into the folder is blocked
+- ZIP extraction to the folder is blocked
+- Files can still be downloaded, printed, and queued
+
+### Deleting External Folders
+
+When you delete an external folder from Bambuddy:
+
+- The database index is removed
+- Generated thumbnails are cleaned up
+- **The actual files on disk are never deleted**
+
+!!! tip "Docker Volume Permissions"
+    Use `:ro` in your Docker volume mount for an extra layer of read-only protection at the filesystem level.
+
+!!! tip "Supported File Types"
+    External folder scanning discovers: `.3mf`, `.gcode`, `.stl`, `.obj`, `.step`, `.stp`, and image files (`.png`, `.jpg`, `.gif`, `.webp`, `.svg`).
+
+---
+
 ## :material-link: Linking Folders
 
 Link folders to projects or archives for organization:
@@ -396,6 +465,12 @@ POST /api/v1/library/files/add-to-queue
 
 # Delete file
 DELETE /api/v1/library/files/{id}
+
+# Create external folder
+POST /api/v1/library/folders/external
+
+# Scan external folder
+POST /api/v1/library/folders/{id}/scan
 ```
 
 See [API Reference](../reference/api.md) for details.
