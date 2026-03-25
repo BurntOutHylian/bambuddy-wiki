@@ -333,6 +333,9 @@ services:
       - "3002:3002"                    # Virtual printer bind/detect (alt port)
       - "990:990"                      # Virtual printer FTPS
       - "8883:8883"                    # Virtual printer MQTT
+      - "6000:6000"                    # Virtual printer file transfer tunnel
+      - "322:322"                      # Virtual printer RTSP camera (X1/H2/P2)
+      - "2024-2026:2024-2026"          # Virtual printer proprietary ports (A1/P1S)
       - "50000-50100:50000-50100"      # Virtual printer FTP passive data
     volumes:
       - bambuddy_data:/app/data

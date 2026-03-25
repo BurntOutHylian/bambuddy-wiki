@@ -179,6 +179,7 @@ sudo ufw allow 8883/tcp  # MQTT
 sudo ufw allow 990/tcp   # FTPS
 sudo ufw allow 6000/tcp  # File transfer tunnel
 sudo ufw allow 322/tcp   # RTSP camera (X1/H2/P2)
+sudo ufw allow 2024:2026/tcp  # Proprietary slicer ports (A1/P1S)
 sudo ufw allow 50000:50100/tcp  # FTP passive data
 ```
 
@@ -192,6 +193,7 @@ sudo firewall-cmd --permanent --add-port=8883/tcp  # MQTT
 sudo firewall-cmd --permanent --add-port=990/tcp   # FTPS
 sudo firewall-cmd --permanent --add-port=6000/tcp  # File transfer tunnel
 sudo firewall-cmd --permanent --add-port=322/tcp   # RTSP camera (X1/H2/P2)
+sudo firewall-cmd --permanent --add-port=2024-2026/tcp  # Proprietary slicer ports (A1/P1S)
 sudo firewall-cmd --permanent --add-port=50000-50100/tcp  # FTP passive data
 sudo firewall-cmd --reload
 ```
@@ -237,6 +239,7 @@ sudo ufw allow 8883/tcp  # MQTT
 sudo ufw allow 990/tcp   # FTPS
 sudo ufw allow 6000/tcp  # File transfer tunnel
 sudo ufw allow 322/tcp   # RTSP camera (X1/H2/P2)
+sudo ufw allow 2024:2026/tcp  # Proprietary slicer ports (A1/P1S)
 sudo ufw allow 50000:50100/tcp  # FTP passive data
 ```
 
@@ -250,6 +253,7 @@ sudo firewall-cmd --permanent --add-port=8883/tcp  # MQTT
 sudo firewall-cmd --permanent --add-port=990/tcp   # FTPS
 sudo firewall-cmd --permanent --add-port=6000/tcp  # File transfer tunnel
 sudo firewall-cmd --permanent --add-port=322/tcp   # RTSP camera (X1/H2/P2)
+sudo firewall-cmd --permanent --add-port=2024-2026/tcp  # Proprietary slicer ports (A1/P1S)
 sudo firewall-cmd --permanent --add-port=50000-50100/tcp  # FTP passive data
 sudo firewall-cmd --reload
 ```
@@ -279,6 +283,7 @@ services:
       - "6000:6000"                    # File transfer tunnel
       - "8883:8883"                    # MQTT
       - "322:322"                      # RTSP camera (X1/H2/P2)
+      - "2024-2026:2024-2026"          # Proprietary slicer ports (A1/P1S)
       - "50000-50100:50000-50100"      # FTP passive data
     volumes:
       - bambuddy_data:/app/data
@@ -708,6 +713,7 @@ Unlike the server modes that archive files locally, **Proxy Mode** forwards your
 | RTSP Camera | 322 | 322 | Camera streaming (transparent proxy, end-to-end TLS) |
 | FTP/FTPS | 990 | 990 | FTP control (transparent proxy, end-to-end TLS) |
 | FTP Data | 50000-50100 | dynamic | FTP passive data (transparent proxy) |
+| Proprietary | 2024-2026 | 2024-2026 | Slicer–printer communication (A1/P1S, transparent proxy) |
 
 ### Key Benefits
 
@@ -744,7 +750,7 @@ Unlike the server modes that archive files locally, **Proxy Mode** forwards your
 **Network Requirements:**
 
 - Bambuddy server accessible from the slicer (same LAN, VPN, or internet)
-- Ports **3000 + 3002** (bind), **990** (FTP), **6000** (file transfer), **8883** (MQTT), **322** (RTSP camera), and **50000-50100** (FTP data) reachable from the slicer
+- Ports **3000 + 3002** (bind), **990** (FTP), **6000** (file transfer), **8883** (MQTT), **322** (RTSP camera), **2024-2026** (A1/P1S proprietary), and **50000-50100** (FTP data) reachable from the slicer
 - Static IP or dynamic DNS for your Bambuddy server (if remote)
 
 **Supported Network Configurations:**
@@ -851,7 +857,7 @@ For setups where Bambuddy has interfaces on two networks (e.g., printer on LAN A
    nc -zv BAMBUDDY_IP 3000
    nc -zv BAMBUDDY_IP 3002
    ```
-3. **Check firewall** — ports 3000/tcp, 3002/tcp, 2021/udp, 8883/tcp, 990/tcp, 50000-50100/tcp must be open
+3. **Check firewall** — ports 3000/tcp, 3002/tcp, 2021/udp, 8883/tcp, 990/tcp, 2024-2026/tcp, 50000-50100/tcp must be open
 5. **Same network?** — SSDP discovery only works on the same LAN/subnet. Use "bind with access code" for VPN, remote, or Docker bridge setups
 
 ### FTP Error / Connection Reset
@@ -959,6 +965,7 @@ If the slicer connects and shows printer status but shows a connection dialog wh
 - **MQTT control channel**: TLS-terminated at Bambuddy (TLS 1.2). In proxy mode, printer IP addresses in MQTT payloads are rewritten to prevent the slicer from bypassing the proxy
 - **File transfer tunnel** (port 6000): End-to-end TLS (transparent proxy)
 - **Camera streaming** (port 322): End-to-end TLS RTSP (transparent proxy)
+- **Proprietary ports** (ports 2024-2026): End-to-end TLS (transparent proxy). Used by A1/P1S models for slicer–printer communication
 - **FTP control channel**: End-to-end TLS (transparent proxy)
 - **FTP data channel**: In proxy mode, transparent proxy — encryption depends on slicer/printer negotiation. Bambu Studio does not encrypt the data channel. Use a VPN for end-to-end data encryption
 - Self-signed certificates are auto-generated (shared CA persists, per-instance device cert regenerates per serial)

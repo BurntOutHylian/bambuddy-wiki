@@ -278,6 +278,7 @@ Ensure your firewall allows these connections:
 | 8000 | HTTP | Inbound | Bambuddy web interface |
 | 8883 | MQTT/TLS | Outbound | Printer communication |
 | 990 | FTPS | Outbound | File transfers from printer |
+| 2024-2026 | TCP | Outbound | Proprietary slicer ports (A1/P1S) |
 
 !!! tip "Accessing from Other Devices"
     To access Bambuddy from other devices on your network, use your server's IP address instead of `localhost`. For example: `http://192.168.1.100:8000`
