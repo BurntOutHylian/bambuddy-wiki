@@ -426,6 +426,8 @@ Automatically turn off after prints:
    - Wait additional cooldown time
    - Turn off the plug
 
+By default, auto-off is **one-shot** — it disables itself after each print and must be re-enabled manually. To keep auto-off active between prints, enable the **Keep Enabled** toggle under the Auto Off settings. This is useful for accessories like chamber filters (e.g., BentoBox on a Home Assistant switch) that should always power off when a print completes.
+
 ### Safety Checks
 
 Auto power-off includes safety checks:
