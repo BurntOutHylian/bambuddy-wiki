@@ -355,6 +355,29 @@ Send the same print to multiple printers at once:
 !!! tip "Print Farms"
     Multi-printer selection is ideal for print farms. Use the default mapping for printers with identical filament configurations, or enable per-printer mapping for mixed setups.
 
+### Staggered Batch Start
+
+When sending a print to multiple printers, you can stagger the starts to avoid power spikes from simultaneous bed heating — especially useful for larger farms (10+ printers).
+
+1. Select multiple printers and choose **Add to Queue**
+2. In the schedule options, enable **Stagger printer starts**
+3. Set the **Group size** (how many printers start at once) and **Interval** (minutes between groups)
+4. A preview shows the schedule: e.g., "6 printers → 3 groups of 2, starting every 5 min (total: 10 min)"
+5. Submit — the first group starts immediately (ASAP) or at the scheduled time, subsequent groups start at computed intervals
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| **Group size** | Number of printers to start simultaneously | 2 |
+| **Interval** | Minutes between each group starting | 5 min |
+
+Default values can be configured in **Settings → Queue → Staggered Start** and overridden per batch in the print modal.
+
+!!! note "How It Works"
+    Staggering is implemented using the existing `scheduled_time` field on queue items. The first group has no scheduled time (starts immediately), while subsequent groups get computed future timestamps. No new scheduler logic is needed — the existing scheduler naturally skips items whose scheduled time hasn't arrived yet.
+
+!!! tip "Power Management"
+    Combine staggered starts with smart plug auto-off for full power management: stagger prevents peak draw at start, auto-off cuts idle power at finish.
+
 ### Per-Printer AMS Mapping
 
 When multiple printers are selected, you can configure filament slot mapping individually for each printer:
