@@ -83,6 +83,15 @@ On dual-nozzle printers, filament matching is nozzle-aware. Each filament requir
 !!! tip "Stored Mappings"
     AMS mappings are saved when you add a print to the queue. When the print starts, Bambuddy uses your configured mapping instead of auto-matching again.
 
+**Prefer Lowest Remaining Filament:**
+
+When multiple AMS spools match the same type and color, the auto-matcher normally picks the first one by slot order. Enable **Prefer lowest remaining filament** in Settings → Filament to instead select the spool with the least filament remaining. This helps consume partial spools before starting new ones, avoiding a buildup of nearly-empty rolls.
+
+- Applies to queue scheduling, print modal pre-selection, and multi-printer mapping
+- Unknown remain values (e.g. external spools without sensors) are treated as full and sorted last
+- The matching priority chain is unchanged (tray_info_idx > exact color > similar color > type-only) — sorting only affects which spool wins within the same tier
+- Disabled by default to preserve existing behavior
+
 ### Plate Selection (Multi-Plate 3MF)
 
 For 3MF files with multiple plates:
