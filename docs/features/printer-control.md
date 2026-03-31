@@ -139,6 +139,52 @@ Toast notifications provide feedback after each action.
 
 ---
 
+## :material-checkbox-multiple-marked: Bulk Actions
+
+Select multiple printer cards and apply actions to all of them at once — ideal for print farms and multi-printer setups.
+
+### Entering Selection Mode
+
+1. Click the **Select** button (:material-checkbox-marked:) in the printer page header toolbar
+2. Printer cards now show checkboxes — click cards to select/deselect
+3. A floating toolbar appears at the bottom of the screen
+
+### Selection Shortcuts
+
+The floating toolbar provides quick ways to select printers:
+
+| Button | Description |
+|--------|-------------|
+| **Select All** | Select all visible printers |
+| **Select by State** | Dropdown to select all printers in a specific state (Printing, Paused, Finished, Idle, Error, Offline) |
+| **Select by Location** | Dropdown to select all printers at a specific location (only visible when printers have locations assigned) |
+
+When viewing printers grouped by location, each location header also shows a "Select All" link to select that group.
+
+### Available Bulk Actions
+
+| Action | Description | Confirmation |
+|--------|-------------|:------------:|
+| **Stop** | Cancel active prints on selected printers | :material-check: |
+| **Pause** | Pause active prints on selected printers | :material-check: |
+| **Resume** | Resume paused prints on selected printers | — |
+| **Clear Notifications** | Clear HMS errors on selected printers | — |
+| **Clear Bed** | Clear print bed on selected printers (may trigger queued jobs) | :material-check: |
+
+Each action button is **smart-enabled** — it only activates when at least one selected printer is in the appropriate state. For example, "Stop" is only clickable when a selected printer is printing or paused.
+
+### Permissions
+
+- Stop, Pause, Resume, Clear Notifications require the **Printer Control** permission (`printers:control`)
+- Clear Bed requires the **Clear Plate** permission (`printers:clear_plate`)
+
+### Exiting Selection Mode
+
+- Press **Escape** on your keyboard
+- Click the **X** button on the floating toolbar
+
+---
+
 ## :material-skip-forward: Skip Objects
 
 Skip individual objects during a print without stopping the entire job.
