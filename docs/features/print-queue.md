@@ -304,6 +304,19 @@ When a print finishes or fails and more items are queued for the same printer, t
 
 This prevents prints from starting on a dirty plate. The button appears whenever the printer is in **Finished** or **Failed** state with pending queue items.
 
+#### Disabling Plate-Clear Confirmation
+
+If you want the scheduler to start the next queued print automatically without waiting for manual plate-clear confirmation:
+
+1. Go to **Settings → Queue**
+2. Disable **Require plate-clear confirmation**
+3. The scheduler will now start queued prints automatically on printers with finished or failed jobs
+
+This is useful for print farms or workflows where you trust the plate is cleared between prints (e.g., with auto-eject or flexible build plates). The default is **enabled**, preserving the existing behavior of requiring manual confirmation.
+
+!!! warning "Use With Caution"
+    Disabling plate-clear confirmation means prints may start on a plate with a previous print still attached. Only disable this if you have a workflow that ensures the plate is cleared between prints.
+
 !!! tip "Permission Required"
     The Clear Plate button requires the **Printers Control** permission when authentication is enabled.
 
@@ -397,9 +410,11 @@ Send the same print to multiple printers at once:
 
 When sending a print to multiple printers, you can stagger the starts to avoid power spikes from simultaneous bed heating — especially useful for larger farms (10+ printers).
 
-1. Select multiple printers and choose **Add to Queue**
-2. In the schedule options, enable **Stagger printer starts**
-3. Set the **Group size** (how many printers start at once) and **Interval** (minutes between groups)
+Staggering is available in both the **Print** dialog (direct print / reprint) and the **Add to Queue** / **Schedule** dialog whenever multiple printers are selected.
+
+1. Select multiple printers in the **Print** or **Add to Queue** dialog
+2. A **Stagger printer starts** checkbox appears automatically when multiple printers are selected
+3. Enable the checkbox, then set the **Group size** (how many printers start at once) and **Interval** (minutes between groups)
 4. A preview shows the schedule: e.g., "6 printers → 3 groups of 2, starting every 5 min (total: 10 min)"
 5. Submit — the first group starts immediately (ASAP) or at the scheduled time, subsequent groups start at computed intervals
 
@@ -408,10 +423,10 @@ When sending a print to multiple printers, you can stagger the starts to avoid p
 | **Group size** | Number of printers to start simultaneously | 2 |
 | **Interval** | Minutes between each group starting | 5 min |
 
-Default values can be configured in **Settings → Queue → Staggered Start** and overridden per batch in the print modal.
+Default values can be configured in **Settings → Queue → Staggered Start** and overridden per batch in the Print or Schedule dialog.
 
 !!! note "How It Works"
-    Staggering is implemented using the existing `scheduled_time` field on queue items. The first group has no scheduled time (starts immediately), while subsequent groups get computed future timestamps. No new scheduler logic is needed — the existing scheduler naturally skips items whose scheduled time hasn't arrived yet.
+    Staggering is implemented using the existing `scheduled_time` field on queue items. The first group has no scheduled time (starts immediately), while subsequent groups get computed future timestamps. No new scheduler logic is needed — the existing scheduler naturally skips items whose scheduled time hasn't arrived yet. When used from the **Print** dialog, the selected prints are automatically queued with staggered start times rather than dispatched immediately.
 
 !!! tip "Power Management"
     Combine staggered starts with smart plug auto-off for full power management: stagger prevents peak draw at start, auto-off cuts idle power at finish.
