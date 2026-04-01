@@ -1,11 +1,11 @@
 ---
 title: Smart Plugs
-description: Tasmota, Home Assistant, and MQTT integration for power control and automation
+description: Tasmota, Home Assistant, MQTT, and REST/Webhook integration for power control and automation
 ---
 
 # Smart Plugs
 
-Control your printers with Tasmota or Home Assistant smart plugs, or monitor energy with MQTT devices for power monitoring, automation, and energy tracking.
+Control your printers with Tasmota, Home Assistant, REST/Webhook, or MQTT smart plugs for power monitoring, automation, and energy tracking.
 
 ![Smart Plugs Settings](../assets/settings-powerplugs.png){ .screenshot }
 
@@ -25,7 +25,7 @@ Smart plug integration enables:
 
 ## :material-cog: Requirements
 
-Bambuddy supports two types of smart plug integrations:
+Bambuddy supports four types of smart plug integrations:
 
 ### Option 1: Tasmota
 
@@ -94,7 +94,29 @@ Scripts appear in a dedicated row on printer cards with "Run" buttons for quick 
 !!! note "Script Behavior"
     Scripts can only be triggered ("Run"), not toggled on/off like regular plugs. They execute once when triggered and complete immediately.
 
-### Option 3: MQTT (Monitor-Only)
+### Option 3: REST / Webhook
+
+Control any device with an HTTP API using custom REST requests:
+
+| Feature | Required? |
+|---------|:---------:|
+| HTTP-accessible device/service | :material-check: Yes |
+| Power control | :material-check: Yes (via custom URLs) |
+| Status monitoring | Optional |
+| Energy monitoring | Optional |
+
+**Supports:**
+
+- **openHAB** - REST API for item control
+- **ioBroker** - Simple REST API
+- **FHEM** - HTTP command interface
+- **Node-RED** - Custom HTTP endpoints
+- **Any REST API** - Any system with an HTTP interface
+
+!!! tip "Universal Integration"
+    The REST/Webhook type is a catch-all for any home automation system or device that exposes an HTTP API. If your system isn't directly supported by the Tasmota or Home Assistant options, REST/Webhook can likely control it.
+
+### Option 4: MQTT (Monitor-Only)
 
 Subscribe to MQTT topics for energy monitoring from any MQTT-enabled device:
 
@@ -209,6 +231,81 @@ When environment variables are active, you'll see:
 
 !!! tip "Entity Selection"
     The dropdown shows the entity's friendly name and current state. Already-configured entities are filtered out.
+
+### Adding a REST / Webhook Plug
+
+REST plugs let you control any device by sending HTTP requests to custom URLs.
+
+#### Adding the Plug
+
+1. Go to **Settings** > **Smart Plugs**
+2. Click **Add Smart Plug**
+3. Select the **REST / Webhook** tab
+4. Configure the control settings:
+
+**Control (at least one URL required):**
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| **Turn ON URL** | URL to turn device on | `http://openhab:8080/rest/items/MyPlug` |
+| **Turn OFF URL** | URL to turn device off | `http://openhab:8080/rest/items/MyPlug` |
+| **HTTP Method** | Request method | `GET`, `POST`, `PUT`, or `PATCH` |
+| **ON Request Body** | Body sent with ON request | `ON` |
+| **OFF Request Body** | Body sent with OFF request | `OFF` |
+
+**Headers (Optional):**
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| **Custom Headers** | JSON object of headers | `{"Authorization": "Bearer your-token"}` |
+
+**Status Monitoring (Optional):**
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| **Status URL** | GET endpoint to check state | `http://openhab:8080/rest/items/MyPlug/state` |
+| **State JSON Path** | Dot notation path to state value | `state` or `data.power.status` |
+| **ON Value** | String that means device is ON | `ON`, `true`, `1` |
+
+**Energy Monitoring (Optional):**
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| **Power JSON Path** | Path to power value in watts | `power` or `data.power_w` |
+| **Energy JSON Path** | Path to energy value in kWh | `energy` or `data.total_kwh` |
+
+Energy values are extracted from the same status URL response.
+
+5. Click **Save**
+
+!!! example "openHAB Example"
+    - **Turn ON URL**: `http://openhab:8080/rest/items/MyPlug`
+    - **Turn OFF URL**: `http://openhab:8080/rest/items/MyPlug`
+    - **HTTP Method**: `POST`
+    - **ON Body**: `ON`
+    - **OFF Body**: `OFF`
+
+!!! example "ioBroker Example"
+    - **Turn ON URL**: `http://iobroker:8087/set/0_userdata.0.plug?value=true`
+    - **Turn OFF URL**: `http://iobroker:8087/set/0_userdata.0.plug?value=false`
+    - **HTTP Method**: `GET`
+    - (No body needed for GET requests)
+
+!!! example "FHEM Example"
+    - **Turn ON URL**: `http://fhem:8083/fhem?cmd=set%20MyPlug%20on`
+    - **Turn OFF URL**: `http://fhem:8083/fhem?cmd=set%20MyPlug%20off`
+    - **HTTP Method**: `GET`
+
+!!! example "Node-RED Example"
+    - **Turn ON URL**: `http://nodered:1880/plug/on`
+    - **Turn OFF URL**: `http://nodered:1880/plug/off`
+    - **HTTP Method**: `POST`
+    - **Headers**: `{"Content-Type": "application/json"}`
+    - **ON Body**: `{"state": "on"}`
+    - **OFF Body**: `{"state": "off"}`
+
+!!! tip "JSON Path"
+    The JSON path uses dot notation to navigate nested objects. For a response like `{"data": {"power": {"status": "ON"}}}`, the path would be `data.power.status`.
 
 ### Adding an MQTT Plug
 
@@ -343,8 +440,8 @@ Each Tasmota smart plug card includes a direct link to the Tasmota web interface
 !!! tip "Quick Configuration"
     Use the admin link for quick access to Tasmota settings like power reporting, schedules, and firmware updates.
 
-!!! note "Home Assistant Plugs"
-    HA plugs don't have an admin link. Manage them through your Home Assistant dashboard.
+!!! note "Home Assistant, REST, and MQTT Plugs"
+    HA, REST/Webhook, and MQTT plugs don't have an admin link. Manage them through their respective interfaces.
 
 ---
 
@@ -552,6 +649,27 @@ Smart plugs have current limits:
 2. Check access token has correct permissions
 3. Try regenerating the access token
 4. Ensure HA integration is enabled
+
+### REST/Webhook: Plug Not Responding
+
+1. Test the URL directly with `curl`:
+   ```bash
+   curl -X POST "http://your-device:8080/api/endpoint" -d "ON"
+   ```
+2. Verify the URL is reachable from Bambuddy's network
+3. Check that headers are valid JSON (if configured)
+4. Ensure the HTTP method matches what the target API expects
+5. Check the target service's logs for errors
+
+### REST/Webhook: Status Not Updating
+
+1. Verify the Status URL returns valid JSON
+2. Test the JSON path against the actual response:
+   ```bash
+   curl "http://your-device:8080/api/status"
+   ```
+3. Ensure the ON Value matches exactly what the API returns (case-sensitive)
+4. Check that the State JSON Path correctly navigates to the state field
 
 ### Auto Power-Off Not Working
 

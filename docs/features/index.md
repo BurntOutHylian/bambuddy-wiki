@@ -115,7 +115,7 @@ Queue prints with drag-and-drop ordering, timeline schedule view, scheduled star
 
 <div class="feature-card" markdown>
 ### [:material-power-plug: Smart Plugs](smart-plugs.md)
-Tasmota and Home Assistant integration for auto power-on before print and power-off after cooldown.
+Tasmota, Home Assistant, REST/Webhook, and MQTT integration for auto power-on before print, power-off after cooldown, and energy monitoring.
 </div>
 
 <div class="feature-card" markdown>

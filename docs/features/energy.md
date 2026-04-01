@@ -30,9 +30,11 @@ Energy tracking requires a smart plug with power monitoring:
 |------|:----------------:|-------|
 | **Tasmota** | :material-check: | Direct HTTP API |
 | **Home Assistant** | :material-check: | Via HA sensors |
+| **REST / Webhook** | :material-check: | Via JSON path extraction from status endpoint |
+| **MQTT** | :material-check: | Via MQTT topic subscription |
 
 !!! info "Home Assistant Energy Sensors"
-    Many HA plugs expose energy data as separate sensor entities. Configure these in the plug settings under **Energy Monitoring (Optional)**. See [Smart Plugs](smart-plugs.md) for setup.
+    Many HA plugs expose energy data as separate sensor entities. Configure these in the plug settings under **Energy Monitoring (Optional)**. REST/Webhook and MQTT plugs extract energy data from JSON responses/messages using configurable paths. See [Smart Plugs](smart-plugs.md) for setup.
 
 ---
 
@@ -40,7 +42,7 @@ Energy tracking requires a smart plug with power monitoring:
 
 ### Setting Up Energy Tracking
 
-1. Configure a smart plug for your printer (Tasmota or Home Assistant)
+1. Configure a smart plug for your printer (Tasmota, Home Assistant, REST/Webhook, or MQTT)
 2. Go to **Settings** > **Smart Plugs**
 3. Assign the plug to a printer
 4. For HA plugs: Configure energy sensor entities if needed

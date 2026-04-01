@@ -447,9 +447,9 @@ Bambuddy v0.2.0b+ uses SQLite WAL (Write-Ahead Logging) mode, which significantl
 
 ## :material-power-plug: Smart Plug Issues
 
-### Plug Not Responding
+### Tasmota Plug Not Responding
 
-**Symptoms:** Can't control smart plug
+**Symptoms:** Can't control Tasmota smart plug
 
 **Solutions:**
 
@@ -465,6 +465,31 @@ Bambuddy v0.2.0b+ uses SQLite WAL (Write-Ahead Logging) mode, which significantl
    ```bash
    curl "http://PLUG_IP/cm?cmnd=Status%200"
    ```
+
+---
+
+### REST/Webhook Plug Not Responding
+
+**Symptoms:** Can't control REST/Webhook smart plug
+
+**Solutions:**
+
+1. **Test the URL with curl**
+   ```bash
+   curl -X POST "http://your-device:8080/api/endpoint" -d "ON"
+   ```
+
+2. **Verify network access**
+   - Ensure the target service is reachable from Bambuddy's network
+
+3. **Check headers**
+   - Custom headers must be valid JSON (e.g., `{"Authorization": "Bearer token"}`)
+
+4. **Check HTTP method**
+   - Ensure the method (GET/POST/PUT/PATCH) matches what the target API expects
+
+5. **Check the target service's logs**
+   - Look for authentication errors or invalid request formats
 
 ---
 
