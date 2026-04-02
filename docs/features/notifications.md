@@ -176,24 +176,33 @@ For custom integrations:
 | **URL** | Your webhook endpoint |
 | **Headers** | Optional (e.g., Authorization) |
 
-Payload format:
+All webhook payloads use a standardized format with `title`, `message`, `timestamp`, `source`, an `event` field identifying the event type, and all event-specific variables as structured fields. This makes it easy for automation tools (n8n, Node-RED, Home Assistant, etc.) to parse event data without extracting information from the message text.
+
+**Print complete** example:
 
 ```json
 {
+  "title": "Print Complete",
+  "message": "Workshop X1C: benchy.3mf completed in 2h 15m",
+  "timestamp": "2026-04-02T14:30:00.123456",
+  "source": "Bambuddy",
   "event": "print_complete",
   "printer": "Workshop X1C",
   "filename": "benchy.3mf",
   "duration": "2h 15m",
   "filament_grams": "15.2",
-  "filament_details": "PLA: 15.2g",
-  "timestamp": "2024-01-15T14:30:00Z"
+  "filament_details": "AMS-A T1 PLA: 15.2g"
 }
 ```
 
-For failed/stopped prints, additional fields are included:
+**Failed/stopped prints** include additional fields:
 
 ```json
 {
+  "title": "Print Failed",
+  "message": "Workshop X1C: benchy.3mf failed at 50%",
+  "timestamp": "2026-04-02T15:15:00.123456",
+  "source": "Bambuddy",
   "event": "print_failed",
   "printer": "Workshop X1C",
   "filename": "benchy.3mf",
@@ -201,25 +210,44 @@ For failed/stopped prints, additional fields are included:
   "filament_grams": "7.6",
   "filament_details": "PLA: 7.6g",
   "progress": "50",
-  "reason": "Filament runout",
-  "timestamp": "2024-01-15T15:15:00Z"
+  "reason": "Filament runout"
 }
 ```
 
-When a camera snapshot is available (e.g. First Layer Complete, Print Started, Print Completed), the payload includes a base64-encoded JPEG image:
+**Simpler events** include fewer fields — only what's relevant:
+
+```json
+{
+  "title": "Printer Offline",
+  "message": "Workshop X1C is offline",
+  "timestamp": "2026-04-02T14:30:00.123456",
+  "source": "Bambuddy",
+  "event": "printer_offline",
+  "printer": "Workshop X1C"
+}
+```
+
+When a camera snapshot is available (e.g. First Layer Complete, Print Started, Print Completed), the payload includes a base64-encoded JPEG image in the `image` field:
 
 ```json
 {
   "title": "First Layer Complete",
-  "message": "Workshop X1C: benchy.3mf\nLayer 1/200 done",
-  "timestamp": "2024-01-15T14:30:00Z",
+  "message": "Workshop X1C: benchy.3mf — Layer 1/200 done",
+  "timestamp": "2026-04-02T14:30:00.123456",
   "source": "Bambuddy",
+  "event": "first_layer_complete",
+  "printer": "Workshop X1C",
+  "filename": "benchy.3mf",
+  "total_layers": "200",
   "image": "/9j/4AAQSkZJRg..."
 }
 ```
 
 !!! tip "Decoding the image"
     The `image` field contains a standard base64-encoded JPEG. In Home Assistant automations, you can decode it with a `template` sensor or pass it to `notify.mobile_app_*` as `image` data. In Node-RED, use a `Buffer.from(msg.payload.image, 'base64')` node. The field is only present when a snapshot was captured — not all events include images.
+
+!!! info "Slack/Mattermost Format"
+    When using the Slack payload format, only `{"text": "..."}` is sent — structured event fields are not included. Use the generic format for automation integrations that need structured data.
 
 ---
 
@@ -466,7 +494,7 @@ Useful during maintenance or troubleshooting.
     Periodically test notifications to ensure they still work.
 
 !!! tip "Bed Cooled Threshold"
-    Configure the bed cooled temperature threshold in **Settings** > **Notifications**. Default is 35°C. The bed is polled every 15 seconds after a print completes, with a 30-minute timeout.
+    Configure the bed cooled temperature threshold in **Settings** > **Notifications**. Default is 35°C. The notification fires as soon as the printer reports the bed at or below the threshold — no timeout.
 
 !!! tip "Plate Not Empty Bypasses Quiet Hours"
     Plate detection notifications are always sent immediately, even during quiet hours or when digest mode is enabled. This ensures you're alerted to potential issues before a print starts.
