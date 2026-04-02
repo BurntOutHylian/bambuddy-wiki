@@ -23,7 +23,7 @@ Bambuddy's backup system:
 
 ## :material-github: GitHub Profile Backup
 
-Automatically backup your K-profiles, cloud profiles, and app settings to a GitHub repository.
+Automatically backup your K-profiles, cloud profiles, app settings, spool inventory, and print archive history to a GitHub repository.
 
 ### Setup
 
@@ -42,11 +42,13 @@ Automatically backup your K-profiles, cloud profiles, and app settings to a GitH
 
 ### What's Backed Up
 
-| Data | Description |
-|------|-------------|
-| K-profiles | Per-printer pressure advance profiles (organized by serial number) |
-| Cloud profiles | Filament, printer, and process profiles from Bambu Cloud |
-| App settings | Application configuration (when enabled) |
+| Data | Description | Default |
+|------|-------------|---------|
+| K-profiles | Per-printer pressure advance profiles (organized by serial number) | On |
+| Cloud profiles | Filament, printer, and process profiles from Bambu Cloud | On |
+| App settings | Application configuration | Off |
+| Spool inventory | Filament spools, usage history, and cost tracking | Off |
+| Print archives | Print history metadata — filament, temperatures, times, costs, energy (no gcode/3MF files) | Off |
 
 ### Schedule Options
 
@@ -74,8 +76,13 @@ repo/
 │   ├── filament.json
 │   ├── printer.json
 │   └── process.json
-└── settings/
-    └── app_settings.json
+├── settings/
+│   └── app_settings.json
+├── spools/
+│   ├── inventory.json
+│   └── usage_history.json
+└── archives/
+    └── print_history.json
 ```
 
 ### Backup History
