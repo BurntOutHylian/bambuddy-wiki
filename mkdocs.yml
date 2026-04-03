@@ -161,6 +161,7 @@ nav:
       - Firmware Updates: features/firmware-updates.md
       - File Manager: features/file-manager.md
       - Backup & Restore: features/backup.md
+      - PostgreSQL Support: features/postgresql.md
       - System Info: features/system-info.md
       - Bug Report: features/bug-report.md
       - Authentication: features/authentication.md

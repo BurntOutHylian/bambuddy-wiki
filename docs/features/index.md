@@ -207,6 +207,11 @@ Full database backup and restore for data protection. GitHub backup for automati
 </div>
 
 <div class="feature-card" markdown>
+### [:material-elephant: PostgreSQL Support](postgresql.md)
+Optional external PostgreSQL database for larger setups. SQLite remains the zero-config default.
+</div>
+
+<div class="feature-card" markdown>
 ### [:material-information: System Info](system-info.md)
 View database statistics, system resources, and generate support bundles.
 </div>
