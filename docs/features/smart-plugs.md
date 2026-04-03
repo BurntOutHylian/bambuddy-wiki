@@ -269,12 +269,19 @@ REST plugs let you control any device by sending HTTP requests to custom URLs.
 
 **Energy Monitoring (Optional):**
 
+Each value (power, energy) can use its own URL or fall back to the shared Status URL. This is useful when your system exposes individual endpoints for each data point (e.g., ioBroker simple-api).
+
 | Field | Description | Example |
 |-------|-------------|---------|
-| **Power JSON Path** | Path to power value in watts | `power` or `data.power_w` |
-| **Energy JSON Path** | Path to energy value in kWh | `energy` or `data.total_kwh` |
+| **Power URL** | Separate endpoint for power data (uses Status URL if empty) | `http://iobroker:8087/get/shelly.0.Power` |
+| **Power JSON Path** | Path to power value in response | `val` or `power` or `data.power_w` |
+| **Power Multiplier** | Multiply raw value (default `1`) | `0.001` to convert mW → W |
+| **Energy URL** | Separate endpoint for energy data (uses Status URL if empty) | `http://iobroker:8087/get/shelly.0.Energy` |
+| **Energy JSON Path** | Path to energy value in response | `val` or `energy` or `data.total_kwh` |
+| **Energy Multiplier** | Multiply raw value (default `1`) | `0.001` to convert Wh → kWh |
 
-Energy values are extracted from the same status URL response.
+!!! tip "When to use separate URLs"
+    If your system returns all data in a single response (like Tasmota or openHAB), just set the **Status URL** and use JSON paths — no separate URLs needed. Use separate Power/Energy URLs when your system requires individual requests per data point.
 
 5. Click **Save**
 
@@ -290,6 +297,19 @@ Energy values are extracted from the same status URL response.
     - **Turn OFF URL**: `http://iobroker:8087/set/0_userdata.0.plug?value=false`
     - **HTTP Method**: `GET`
     - (No body needed for GET requests)
+
+!!! example "ioBroker with Energy Monitoring (separate URLs)"
+    - **Turn ON URL**: `http://iobroker:8087/set/shelly.0.Relay0.Switch?value=true`
+    - **Turn OFF URL**: `http://iobroker:8087/set/shelly.0.Relay0.Switch?value=false`
+    - **HTTP Method**: `GET`
+    - **Status URL**: `http://iobroker:8087/get/shelly.0.Relay0.Switch`
+    - **State JSON Path**: `val`
+    - **ON Value**: `true`
+    - **Power URL**: `http://iobroker:8087/get/shelly.0.Relay0.Power`
+    - **Power JSON Path**: `val`
+    - **Energy URL**: `http://iobroker:8087/get/shelly.0.Relay0.Energy`
+    - **Energy JSON Path**: `val`
+    - **Energy Multiplier**: `0.001` (converts Wh to kWh)
 
 !!! example "FHEM Example"
     - **Turn ON URL**: `http://fhem:8083/fhem?cmd=set%20MyPlug%20on`
