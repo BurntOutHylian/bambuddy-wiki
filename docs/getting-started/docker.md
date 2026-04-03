@@ -113,9 +113,20 @@ volumes:
 | `LOG_LEVEL` | `INFO` | Log level: `DEBUG`, `INFO`, `WARNING`, `ERROR` |
 | `HA_URL` | _(none)_ | Home Assistant URL for automatic integration (e.g., `http://192.168.1.100:8123`) |
 | `HA_TOKEN` | _(none)_ | Home Assistant Long-Lived Access Token for automatic integration |
+| `DATABASE_URL` | _(none)_ | External PostgreSQL connection string (e.g., `postgresql+asyncpg://user:pass@host:5432/bambuddy`). Uses built-in SQLite when not set. |
 
 !!! info "Home Assistant Integration"
     When both `HA_URL` and `HA_TOKEN` are set, the Home Assistant integration is automatically enabled and configured. The URL and token fields become read-only in the UI. This is primarily used by the [Home Assistant add-on](https://github.com/hobbypunk90/homeassistant-addon-bambuddy/) for zero-configuration setup.
+
+!!! tip "External PostgreSQL Database"
+    By default, Bambuddy uses a built-in SQLite database that requires zero configuration. For larger setups or when you prefer a dedicated database server, set `DATABASE_URL` to point to an external PostgreSQL instance:
+
+    ```yaml
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://bambuddy:yourpassword@db-host:5432/bambuddy
+    ```
+
+    Bambuddy will automatically create all tables on first startup. Backup/restore uses `pg_dump`/`pg_restore` instead of file copy.
 
 ### Custom Port
 

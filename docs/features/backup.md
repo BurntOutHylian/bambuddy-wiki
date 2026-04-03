@@ -147,7 +147,7 @@ bambuddy-backup-20260201-143022.zip
 
 ```
 bambuddy-backup-YYYYMMDD-HHMMSS.zip
-├── bambuddy.db              # Complete SQLite database
+├── bambuddy.db              # Database (portable SQLite format, works on both SQLite and PostgreSQL installs)
 ├── archive/                 # All archive data
 │   ├── <archive_id>/        # Individual archive folders
 │   │   ├── *.3mf            # Archived print files
@@ -203,39 +203,67 @@ Backups are fully portable between installations:
 - **Different servers**: Move from one machine to another
 - **Different paths**: Works even if data directory changed
 - **Different Docker volumes**: Migrate between container setups
+- **Different database backends**: Restore a SQLite backup into a PostgreSQL install (and vice versa)
 
-The backup system stores relative paths internally, so files work correctly regardless of where Bambuddy is installed.
+The backup system always exports data in portable SQLite format, regardless of which database backend you use. When restoring into PostgreSQL, Bambuddy automatically converts data types (booleans, datetimes) and handles foreign key constraints.
 
 ---
 
 ## :material-database-export: Manual Database Access
 
-### Location
+=== ":material-database: SQLite (Default)"
 
-The database is stored at:
+    ### Location
 
-```
-/path/to/bambuddy/bambuddy.db
-```
+    The database is stored at:
 
-### Direct Backup
+    ```
+    /path/to/bambuddy/bambuddy.db
+    ```
 
-Copy the database file directly:
+    ### Direct Backup
 
-```bash
-cp bambuddy.db bambuddy_backup_$(date +%Y%m%d).db
-```
+    Copy the database file directly:
 
-!!! warning "Stop Bambuddy First"
-    Stop Bambuddy before copying to ensure consistency.
+    ```bash
+    cp bambuddy.db bambuddy_backup_$(date +%Y%m%d).db
+    ```
 
-### SQLite Tools
+    !!! warning "Stop Bambuddy First"
+        Stop Bambuddy before copying to ensure consistency.
 
-Use SQLite tools for advanced operations:
+    ### SQLite Tools
 
-```bash
-# Dump to SQL
-sqlite3 bambuddy.db .dump > backup.sql
+    Use SQLite tools for advanced operations:
+
+    ```bash
+    # Dump to SQL
+    sqlite3 bambuddy.db .dump > backup.sql
+
+=== ":material-elephant: PostgreSQL"
+
+    ### Connection
+
+    Connect to your PostgreSQL database using the same `DATABASE_URL` from your configuration:
+
+    ```bash
+    psql "postgresql://user:pass@host:5432/bambuddy"
+    ```
+
+    ### Direct Backup
+
+    ```bash
+    pg_dump -Fc "postgresql://user:pass@host:5432/bambuddy" > bambuddy_backup_$(date +%Y%m%d).dump
+    ```
+
+    ### Restore
+
+    ```bash
+    pg_restore --clean --if-exists -d "postgresql://user:pass@host:5432/bambuddy" bambuddy_backup.dump
+    ```
+
+    !!! tip "Bambuddy's Built-in Backup is Easier"
+        The Settings > Backup page creates portable backups that work across both SQLite and PostgreSQL. Use manual `pg_dump` only if you need PostgreSQL-specific features like point-in-time recovery.
 
 # Restore from SQL
 sqlite3 new.db < backup.sql
