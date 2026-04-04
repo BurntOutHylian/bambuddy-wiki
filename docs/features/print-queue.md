@@ -178,6 +178,45 @@ Cancel or inspect an entire batch at once:
 
 ---
 
+## :material-sort-ascending: Shortest Job First (SJF)
+
+Prioritize shorter print jobs so more jobs complete sooner.
+
+### Enabling SJF
+
+1. Go to the **Queue** page
+2. Click the **SJF** badge in the pending queue header (next to the sort dropdown)
+3. The badge turns green when active
+
+### How It Works
+
+When SJF is enabled, the scheduler picks the shortest pending print for each printer instead of following FIFO order:
+
+1. **Jumped items first** — jobs that were previously skipped get top priority (starvation guard)
+2. **Shortest duration next** — among remaining items, the shortest print time wins
+3. **Position as tiebreaker** — equal-duration items use their original queue position
+
+The queue page automatically reorders to show the scheduler's actual execution order when SJF is active.
+
+### Starvation Guard
+
+Without protection, a long job could be postponed indefinitely as shorter jobs keep arriving. SJF includes an automatic fairness mechanism:
+
+- When a shorter job jumps ahead of a longer one, the longer job is flagged as "jumped"
+- A jumped job **cannot be skipped again** — it moves to the front of the queue on the next cycle
+- This guarantees every job eventually prints, regardless of duration
+
+### Requirements
+
+- Print duration must be available in the 3MF metadata (the `prediction` field in `slice_info.config`)
+- Items without a known print time are sorted last
+- SJF applies independently per printer — each printer's queue is sorted separately
+
+!!! tip "When to Use"
+    SJF is ideal for print farms with a mix of short and long jobs. If your queue has ten 8-hour prints and someone adds a 20-minute job, SJF moves it to the front instead of waiting 80+ hours.
+
+---
+
 ## :material-drag: Drag and Drop Ordering
 
 Reorder prints in the queue:
