@@ -217,6 +217,43 @@ Without protection, a long job could be postponed indefinitely as shorter jobs k
 
 ---
 
+## :material-code-tags: Auto-Print G-code Injection
+
+Inject custom G-code at the start and/or end of prints for third-party bed-clearing systems like Farmloop, SwapMod, AutoClear, and Printflow 3D.
+
+### Configuring Snippets
+
+1. Go to **Settings → Workflow**
+2. Find the **G-code Injection** card
+3. For each printer model you use, enter:
+    - **Start G-code** — prepended before the first line of the print's G-code
+    - **End G-code** — appended after the last line of the print's G-code
+4. Changes save automatically when you click out of the text field
+
+Only printer models that you have connected appear in the list.
+
+### Enabling Per Queue Item
+
+1. Open the **Add to Queue** or **Edit Queue Item** dialog
+2. Check **Inject auto-print G-code**
+3. Submit — the queue item shows a green **G-code** badge
+
+When the scheduler dispatches the print:
+
+1. Looks up the G-code snippets for the target printer's model
+2. Creates a **temporary copy** of the 3MF with the snippets injected
+3. Uploads the modified copy via FTP
+4. Cleans up the temporary file after upload
+
+!!! info "Original Files Unchanged"
+    The injection never modifies your archive or library files. A temporary copy is created for upload only.
+
+### Reprint with Quantity
+
+When reprinting with quantity > 1, the first copy prints immediately (without injection), and additional copies are queued. The **Inject G-code** checkbox applies to the queued copies.
+
+---
+
 ## :material-drag: Drag and Drop Ordering
 
 Reorder prints in the queue:
