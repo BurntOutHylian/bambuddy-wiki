@@ -295,6 +295,71 @@ Advanced Auth can be toggled on or off at any time without affecting basic authe
 
 ---
 
+## LDAP Authentication
+
+Bambuddy supports LDAP/Active Directory authentication, allowing users to log in with their directory credentials. LDAP users coexist with local accounts — the local admin remains as a fallback when the LDAP server is unreachable.
+
+### Setting Up LDAP
+
+1. Go to **Settings** → **Authentication** → **LDAP** tab
+2. Configure your LDAP server:
+   - **Server URL** — `ldaps://ldap.example.com:636` for LDAPS or `ldap://ldap.example.com:389` for StartTLS
+   - **Security** — StartTLS (upgrades plain connection to TLS) or LDAPS (TLS from the start)
+   - **Bind DN** — Service account DN for searching users (e.g., `cn=admin,dc=example,dc=com`)
+   - **Bind Password** — Service account password
+   - **Search Base** — Where to search for users (e.g., `dc=example,dc=com`)
+   - **User Search Filter** — LDAP filter to find users. `{username}` is replaced with the login name
+     - Active Directory: `(sAMAccountName={username})`
+     - OpenLDAP: `(uid={username})`
+3. Click **Save**, then **Test Connection** to verify
+4. Click **Enable** to activate LDAP authentication
+
+!!! warning "TLS Required"
+    Plaintext LDAP is not supported. All connections use either StartTLS or LDAPS to encrypt credentials in transit.
+
+### User Provisioning
+
+- **Auto-provision** — When enabled, a BamBuddy account is automatically created on first successful LDAP login. When disabled, an admin must pre-create the user in BamBuddy.
+- **Email sync** — The user's email address from LDAP is synced on each login.
+- **Auth source** — LDAP users are tagged with `auth_source=ldap` and shown with an "LDAP" badge in user management.
+
+### Group Mapping
+
+LDAP groups can be mapped to BamBuddy groups for automatic role assignment. The mapping is configured as a JSON object in the LDAP settings:
+
+```json
+{
+  "cn=PrintFarm_Admins,ou=groups,dc=example,dc=com": "Administrators",
+  "cn=PrintFarm_Operators,ou=groups,dc=example,dc=com": "Operators",
+  "cn=PrintFarm_Viewers,ou=groups,dc=example,dc=com": "Viewers"
+}
+```
+
+- Keys are LDAP group DNs (case-insensitive matching)
+- Values are BamBuddy group names
+- Both Active Directory groups (`memberOf` attribute) and POSIX groups (`memberUid` attribute) are supported
+- Group membership is synced on every login
+
+!!! tip "No Mapping? No Problem"
+    If no group mapping is configured, LDAP users are created without any group. Admins can manually assign groups in BamBuddy afterward.
+
+### Password Management
+
+LDAP users cannot change their password through BamBuddy — passwords are managed by the LDAP server. The following features are automatically disabled for LDAP users:
+
+- Change Password button (hidden in UI)
+- Forgot Password (skipped for LDAP emails)
+- Admin Password Reset (blocked with error message)
+
+### Local Admin Fallback
+
+Local accounts always work regardless of LDAP status. If the LDAP server is unreachable, LDAP authentication fails gracefully and falls back to local authentication. This ensures administrators can always access BamBuddy.
+
+!!! info "Same Username"
+    If a local user and an LDAP user have the same username, the local account takes priority. LDAP will not override an existing local account.
+
+---
+
 ## Security Details
 
 ### Password Storage
