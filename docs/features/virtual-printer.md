@@ -1,12 +1,41 @@
 # Virtual Printer
 
-The Virtual Printer feature allows Bambuddy to emulate one or more Bambu Lab printers on your network. This enables you to send prints directly from Bambu Studio or OrcaSlicer to Bambuddy, even without a physical printer connected.
+> Send prints to Bambuddy directly from Bambu Studio or OrcaSlicer — even when your real printer is busy, offline, or doesn't exist yet.
 
-You can create **multiple virtual printers**, each with its own dedicated IP address, mode, printer model, and access code. Each virtual printer runs completely independent services (FTP, MQTT, SSDP, Bind).
+<div class="grid cards" markdown>
+
+-   :material-archive: **Print Archiving**
+
+    Send prints to Bambuddy for archiving without starting them.
+
+-   :material-playlist-plus: **Queue Building**
+
+    Build up a print queue before your printer is available.
+
+-   :material-printer-3d: **Print Farm Prep**
+
+    Prepare jobs to distribute across multiple printers.
+
+-   :material-wan: **Remote Slicing**
+
+    Slice on one computer, send to Bambuddy running elsewhere.
+
+-   :material-cloud-print: **Remote Printing**
+
+    Print from anywhere via Proxy Mode.
+
+</div>
+
+[Install Bambuddy :material-arrow-right:](../getting-started/installation.md){ .md-button .md-button--primary }
+[How it works :material-arrow-down:](#overview){ .md-button }
 
 ![Virtual Printer Settings](../assets/settings-virtual-printer.png){ .screenshot }
 
 ## Overview
+
+The Virtual Printer feature allows Bambuddy to emulate one or more Bambu Lab printers on your network. This enables you to send prints directly from Bambu Studio or OrcaSlicer to Bambuddy, even without a physical printer connected.
+
+You can create **multiple virtual printers**, each with its own dedicated IP address, mode, printer model, and access code. Each virtual printer runs completely independent services (FTP, MQTT, SSDP, Bind).
 
 When enabled, each virtual printer:
 
@@ -29,17 +58,12 @@ The virtual printer supports four modes:
 
 The first three are **server modes** — Bambuddy runs its own FTP/MQTT servers and receives files locally. **Proxy mode** is different — Bambuddy uses transparent TCP proxying to forward traffic to a real printer, with end-to-end TLS between the slicer and printer for most protocols.
 
-## Use Cases
-
-- **Print Archiving**: Send prints to Bambuddy for archiving without starting them
-- **Queue Building**: Build up a print queue before your printer is available
-- **Print Farm Preparation**: Prepare jobs to distribute across multiple printers
-- **Remote Slicing**: Slice on one computer and send to Bambuddy running elsewhere
-- **Remote Printing**: Print from anywhere via Proxy Mode (see below)
-
 ---
 
 ## Required Ports
+
+!!! tip "You don't usually need to configure these"
+    The installer and UI handle port setup automatically. This table is reference for advanced setups, firewall rules, or Docker networking — safe to skim on a first read.
 
 Each virtual printer uses these ports on its dedicated bind IP:
 
@@ -63,7 +87,7 @@ Each virtual printer uses these ports on its dedicated bind IP:
 
 ## Certificate Installation
 
-!!! danger "Required Step"
+!!! info "Required Step"
     The virtual printer uses TLS encryption with a self-signed CA certificate.
     Bambu Studio and OrcaSlicer **do not use the system certificate store** — you must add the certificate directly to the slicer's certificate file.
 
@@ -979,3 +1003,10 @@ If the slicer connects and shows printer status but shows a connection dialog wh
 - Slicer must trust the self-signed certificate (see [Certificate Installation](#certificate-installation))
 - FTP data channel unencrypted on slicer side (use VPN for full encryption)
 - VPN tun mode does not support SSDP broadcast — printers must be added manually by IP
+
+---
+
+## Ready to try it?
+
+[Install Bambuddy :material-arrow-right:](../getting-started/installation.md){ .md-button .md-button--primary }
+[Back to top :material-arrow-up:](#virtual-printer){ .md-button }
