@@ -11,6 +11,50 @@ Bambuddy provides live monitoring of all your connected Bambu Lab printers throu
 
 ---
 
+## :material-magnify: Search & Filters
+
+Large print farms are hard to navigate on a phone where Ctrl+F isn't an option. The Printers page has a live search bar and two filter dropdowns above the card grid.
+
+### Live Search
+
+Type into the search bar to filter the card grid in real time. The search matches **any** of the following fields (case-insensitive, whitespace-trimmed):
+
+- Printer name
+- Printer model (e.g., `X1C`, `P1S`, `A1 mini`)
+- Location
+- Serial number
+
+Click the **:material-close:** button inside the search bar to clear it.
+
+### Status Filter
+
+The **status** dropdown filters by current printer state:
+
+| Option | Shows |
+|--------|-------|
+| All statuses | Every printer (default) |
+| Printing | Currently running a job |
+| Paused | Print paused |
+| Idle | Connected and ready |
+| Finished | Waiting for plate clear |
+| Error | FAILED state or active HMS errors |
+| Offline | Disconnected |
+
+The status filter is **reactive to WebSocket updates** — when a print finishes and the printer transitions from `RUNNING` to `FINISH`, it is immediately removed from the "Printing" view without needing a manual refresh.
+
+### Location Filter
+
+The **location** dropdown appears only when at least one printer has a location configured. It lets you quickly narrow the view to a single workshop, rack, or room. Location values are taken directly from each printer's configured location.
+
+### Combining Filters
+
+Search, status, and location filters combine — a matching printer must pass **all three** checks. An empty-state message appears if no printer matches the current combination; clear the search bar or reset the dropdowns to see everything again.
+
+!!! tip "Mobile Tip"
+    On phones, use the search bar to quickly find a specific printer by location or serial when scrolling through many cards would be tedious.
+
+---
+
 ## :material-resize: Resizable Printer Cards
 
 Adjust the size of printer cards to fit your screen and workflow:
