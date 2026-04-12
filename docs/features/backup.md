@@ -99,6 +99,98 @@ View backup history in the **Backup History** section:
 
 ---
 
+## :material-clock-outline: Scheduled Local Backups
+
+Automate local backups on a recurring schedule so you never forget to protect your data.
+
+### Overview
+
+The **Scheduled Backups** card in **Settings** > **Backup** lets you configure automatic local backups that run in the background. Each backup produces the same complete ZIP file as a manual backup (database + all data directories), stored on disk where you can easily copy them to a NAS or external drive.
+
+Works with both SQLite and PostgreSQL installations.
+
+### Configuration
+
+| Setting | Options | Default |
+|---------|---------|---------|
+| Enable | On / Off | Off |
+| Frequency | Hourly, Daily, Weekly | Daily |
+| Time of day | Time picker (for Daily and Weekly) | 00:00 |
+| Retention count | 1--100 | 5 |
+| Output path | Any local or network path | `DATA_DIR/backups/` |
+
+!!! info "Retention"
+    When a new backup completes, Bambuddy automatically deletes the oldest backups beyond the retention count. For example, with retention set to 5, only the 5 most recent backups are kept.
+
+### Managing Backups
+
+Each backup in the list supports three actions:
+
+- **Download** -- download the ZIP file to your browser
+- **Restore** -- restore directly from the backup (same as manual restore)
+- **Delete** -- remove the backup file from disk
+
+Click **Run Now** to trigger an immediate backup outside the schedule.
+
+### Docker Setup
+
+Docker users should mount the backup output directory as a volume so backups are persisted outside the container. Add a bind mount to your `docker-compose.yml`:
+
+```yaml
+services:
+  bambuddy:
+    image: ghcr.io/maziggy/bambuddy:latest
+    container_name: bambuddy
+    network_mode: host
+    volumes:
+      - bambuddy_data:/app/data
+      - bambuddy_logs:/app/logs
+      - /path/to/nas/bambuddy-backups:/app/data/backups  # Scheduled backup output
+    environment:
+      - TZ=Europe/Berlin
+    restart: unless-stopped
+
+volumes:
+  bambuddy_data:
+  bambuddy_logs:
+```
+
+Or with `docker run`:
+
+```bash
+docker run -d \
+  --network host \
+  -v bambuddy_data:/app/data \
+  -v bambuddy_logs:/app/logs \
+  -v /path/to/nas/bambuddy-backups:/app/data/backups \
+  -e TZ=Europe/Berlin \
+  --name bambuddy \
+  --restart unless-stopped \
+  ghcr.io/maziggy/bambuddy:latest
+```
+
+!!! tip "NAS or Network Share"
+    Point the bind mount at a NAS share, Samba mount, or NFS path for automatic off-site backups without any extra scripts.
+
+### Non-Docker Setup
+
+For bare-metal or virtual machine installs, set the **Output path** in the UI to any directory your Bambuddy process can write to -- a local folder, a mounted network drive, or an external USB drive.
+
+### API Endpoints
+
+For automation or monitoring, the scheduled backup system exposes a REST API:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/local-backup/status` | Current schedule config and next run time |
+| `POST` | `/local-backup/run` | Trigger an immediate backup |
+| `GET` | `/local-backup/backups` | List all backup files |
+| `GET` | `/local-backup/backups/{filename}/download` | Download a backup file |
+| `POST` | `/local-backup/backups/{filename}/restore` | Restore from a backup file |
+| `DELETE` | `/local-backup/backups/{filename}` | Delete a backup file |
+
+---
+
 ## :material-cloud-download: Creating a Local Backup
 
 ### Manual Backup
@@ -326,7 +418,7 @@ Moving between versions:
 
 | Frequency | Good For |
 |-----------|----------|
-| Daily | Active printing (set a reminder) |
+| Daily | Active printing (use [Scheduled Local Backups](#scheduled-local-backups)) |
 | Weekly | Regular use |
 | Monthly | Light use |
 
