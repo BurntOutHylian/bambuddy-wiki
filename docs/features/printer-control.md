@@ -325,6 +325,42 @@ Click the speed badge to open a dropdown menu with four presets:
 
 ---
 
+## :material-snowflake: Airduct Mode (P2S / H2*)
+
+Switch the chamber airduct between **Cooling** and **Heating** modes from the printer card. Available only on P2S, H2D, H2C, and H2S — printers without an active airduct don't show the badge.
+
+### Airduct Badge
+
+A compact badge appears in the controls row, immediately to the left of the print speed badge.
+
+| Mode | Icon | Color | When to Use |
+|------|:----:|:-----:|-------------|
+| **Cooling** | :material-snowflake: | sky blue | PLA / PETG / TPU — filters and cools chamber air |
+| **Heating** | :material-fire: | orange | ABS / ASA / PC / PA — circulates and heats chamber air, closes top exhaust flap |
+
+Click the badge to open a dropdown and pick the mode. The command is sent via MQTT (`set_airduct`) and the badge updates immediately on confirmation.
+
+---
+
+## :material-door: SD Card &amp; Door Status Badges
+
+The top status row of every printer card now shows two compact icon-only badges so you can see drive and enclosure state at a glance.
+
+| Badge | Green | Red / Yellow | Notes |
+|-------|:-----:|:------------:|-------|
+| :material-sd: **SD Card** | inserted | red when missing | All printers |
+| :material-door-closed: **Door** | closed | yellow when open | X1 / P1S / P2S / H2 series only |
+
+Door state is detected from the right MQTT field per printer family (X1: `home_flag` bit 23, others: `stat` bit 23) and pushed live via WebSocket — no waiting for the next status poll.
+
+---
+
+## :material-refresh: Force Refresh
+
+The printer card kebab menu has a **Force Refresh** entry that triggers an MQTT `pushall` request, asking the printer to re-broadcast its full status. Useful when a value looks stale and you don't want to fully reconnect (which would tear down the existing MQTT/FTP session).
+
+---
+
 ## :material-fan: Fan Status
 
 Monitor cooling fan speeds in real time directly from the printer card.
