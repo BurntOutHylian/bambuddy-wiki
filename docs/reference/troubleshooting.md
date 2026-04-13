@@ -536,6 +536,26 @@ See [Slicer Can't Find or Connect to Virtual Printer](../features/virtual-printe
 
 ---
 
+## :material-refresh-auto: Print Queue Issues
+
+### Next queued print auto-started without "Clear Plate" confirmation
+
+**Symptoms:** You have Auto Off enabled and a queue of prints. When one print finishes, the smart plug cuts power; the plug immediately re-powers the printer because the next job is queued; the next print then starts without showing the **Clear Plate & Start Next** prompt.
+
+**Background:**
+
+Before Bambuddy v0.2.3b4, the plate-clear gate lived only in memory and was tied to the printer's reported state (`FINISH` / `FAILED`). When the plug re-powered the printer, it booted fresh into `IDLE` with no memory of the previous finish, so the scheduler's idle check saw a normal idle printer and dispatched the next job immediately — bypassing the confirmation (#961).
+
+**Solutions:**
+
+1. **Update to Bambuddy v0.2.3b4 or later** — the gate is now persisted to the database and keyed off an explicit "awaiting acknowledgment" flag instead of the reported state. The prompt survives Auto Off power cycles, Bambuddy restarts, and the printer booting back into `IDLE`.
+
+2. **If the prompt still doesn't appear after the update**, confirm **Require plate-clear confirmation** is enabled in **Settings → Queue**.
+
+3. **Dismissing a stale prompt** — if Bambuddy thinks the plate is still uncleared but you've already removed the print (e.g. after a crash), just tap **Clear Plate & Start Next**. The scheduler will dispatch the next job if one is queued; if the queue is empty the flag is simply cleared.
+
+---
+
 ## :material-cog: General Issues
 
 ### Bambuddy Won't Start

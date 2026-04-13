@@ -435,7 +435,10 @@ When a print finishes or fails and more items are queued for the same printer, t
 2. Click **Clear Plate & Start Next** on the printer card
 3. The scheduler starts the next queued print within 30 seconds
 
-This prevents prints from starting on a dirty plate. The button appears whenever the printer is in **Finished** or **Failed** state with pending queue items.
+This prevents prints from starting on a dirty plate. The button appears whenever the printer is awaiting a plate-clear acknowledgment — which is set when a print finishes or fails and cleared only when you tap the button or the scheduler dispatches the next job.
+
+!!! info "Survives restarts and Auto Off power cycles"
+    The pending confirmation is persisted to the database, so it survives Bambuddy restarts and printer power cycles. This matters specifically when Auto Off cuts printer power at the end of a print and the smart plug immediately re-powers the printer because another job is queued: the printer boots back into **Idle** with no memory of the previous finish, but the confirmation prompt still shows and the queue stays gated until you acknowledge — no more auto-starting on an uncleared plate after a power cycle.
 
 #### Disabling Plate-Clear Confirmation
 
