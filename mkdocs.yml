@@ -140,6 +140,7 @@ nav:
     - Analytics:
       - Statistics Dashboard: features/statistics.md
       - Failure Analysis: features/failure-analysis.md
+      - AI Failure Detection: features/failure-detection.md
       - Energy Tracking: features/energy.md
       - Export: features/export.md
     - Automation:
