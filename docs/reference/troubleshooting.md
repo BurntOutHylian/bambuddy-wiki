@@ -511,6 +511,31 @@ Bambuddy v0.2.0b+ uses SQLite WAL (Write-Ahead Logging) mode, which significantl
 
 ---
 
+## :material-printer-3d-nozzle: Virtual Printer Issues
+
+### Slicer shows no AMS / no filament slots / no temperatures
+
+**This is expected in server modes (Immediate / Review / Print Queue).**
+
+A virtual printer in a server mode is a file receiver — there is no real printer behind it, so the slicer has nothing to query. The AMS panel stays empty, filament slots show generic defaults, and there are no live temperatures.
+
+**How to slice anyway:**
+
+1. In the slicer, pick the printer **model** that matches where you plan to print (X1C, P1S, A1, etc.)
+2. Set filaments **manually** for each extruder / AMS slot — same as slicing offline
+3. Click **Send** (not Print) to transfer the sliced file to Bambuddy
+4. Send to a real printer later from Bambuddy's UI (Print Queue, Archive, File Manager) — real AMS mapping happens on the printer at print time
+
+**If you want live AMS data in the slicer:** switch the virtual printer to **Proxy Mode**. Proxy Mode relays the slicer ↔ printer conversation to a real printer, so the slicer sees the real AMS, temperatures, and can start prints directly.
+
+See the [Virtual Printer guide](../features/virtual-printer.md#why-dont-i-see-my-ams-filament-slots-in-the-slicer) for the full explanation.
+
+### Slicer can't find the Virtual Printer
+
+See [Slicer Can't Find or Connect to Virtual Printer](../features/virtual-printer.md#slicer-cant-find-or-connect-to-virtual-printer) in the Virtual Printer guide — covers SSDP, bind ports (3000/3002), TLS certificate, and cross-subnet setups.
+
+---
+
 ## :material-cog: General Issues
 
 ### Bambuddy Won't Start

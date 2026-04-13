@@ -58,6 +58,9 @@ The virtual printer supports four modes:
 
 The first three are **server modes** — Bambuddy runs its own FTP/MQTT servers and receives files locally. **Proxy mode** is different — Bambuddy uses transparent TCP proxying to forward traffic to a real printer, with end-to-end TLS between the slicer and printer for most protocols.
 
+!!! warning "Server modes don't show AMS data in the slicer — and that's intentional"
+    A virtual printer in Immediate / Review / Print Queue mode has no real printer behind it, so the slicer has nothing to query — no AMS slots, no loaded filaments, no temperatures. You set filaments **manually** in the slicer and hit **Send**, same as slicing offline. If you want live AMS data in the slicer, you want **Proxy Mode**. See [Why don't I see my AMS / filament slots in the slicer?](#why-dont-i-see-my-ams-filament-slots-in-the-slicer) for the full explanation.
+
 ---
 
 ## Required Ports
@@ -701,6 +704,31 @@ If automatic discovery doesn't work (VPN, remote, bridge mode):
 
 !!! tip "Send Button Location"
     In Bambu Studio/OrcaSlicer, the Send button is typically a small icon next to the large Print button, or accessible via the dropdown arrow on the Print button.
+
+#### Why don't I see my AMS / filament slots in the slicer?
+
+This is the **#1 question** about server modes — and the answer is: **you're not supposed to**.
+
+A virtual printer in Immediate / Review / Print Queue mode is **not connected to a real printer**. It's a file receiver. There is no AMS, no loaded filaments, no spool weights, no nozzle temperature — because there is no printer behind it. The slicer has nothing to query, so the AMS panel stays empty and filament slots fall back to generic defaults.
+
+**This is by design.** The whole point of server modes is to decouple slicing from printing:
+
+- Slice now, pick a real printer later
+- Send a file from a laptop while the printer is offline
+- Queue jobs for whichever printer is free when you get to the farm
+- Archive sliced jobs without printing them at all
+
+**How to slice correctly for a virtual printer in server mode:**
+
+1. In the slicer, pick the **printer model** that matches the real printer you intend to print on (X1C, P1S, A1, etc.). The virtual printer announces its model via SSDP so the slicer picks the right profile.
+2. Set filaments **manually** — choose the material/color/brand for each extruder or AMS slot the way you would if you were slicing offline for a printer that isn't powered on.
+3. Use the **Send** button. The sliced `.3mf` lands in Bambuddy (archived, queued, or pending review depending on mode).
+4. When you're ready to print, send the file to a **real printer** from Bambuddy's UI (Print Queue, Archive, or File Manager). At that point the real printer's AMS is used and slot mapping happens on the printer itself.
+
+!!! tip "I want live AMS data in the slicer"
+    Then you want **Proxy Mode**, not a server mode. Proxy Mode forwards the slicer ↔ printer conversation to a real printer, so the slicer sees the real AMS, live temperatures, and can start prints directly. See [Proxy Mode](#material-earth-proxy-mode-remote-printing) below.
+
+    Server modes are for the opposite use case: slicing without a printer in the loop.
 
 ### Proxy Mode
 
