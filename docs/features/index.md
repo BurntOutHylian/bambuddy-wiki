@@ -218,7 +218,7 @@ View database statistics, system resources, and generate support bundles.
 
 <div class="feature-card" markdown>
 ### [:material-lock: Authentication](authentication.md)
-Optional user authentication with role-based access control. Advanced Auth via Email for automated user onboarding and self-service password resets.
+Optional user authentication with role-based access control. Advanced Auth via Email for self-service password resets, LDAP / Active Directory integration, **Two-Factor Authentication** (TOTP + Email OTP with single-use backup codes), and **Single Sign-On (OIDC / SSO)** for PocketID, Authentik, Keycloak and any standards-compliant provider.
 </div>
 
 </div>

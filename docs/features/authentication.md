@@ -360,6 +360,90 @@ Local accounts always work regardless of LDAP status. If the LDAP server is unre
 
 ---
 
+## Two-Factor Authentication (2FA)
+
+Bambuddy supports per-user opt-in two-factor authentication via either **TOTP** (time-based one-time password, compatible with Google Authenticator, Authy, 2FAS, and any standard TOTP app) or **Email OTP** (a 6-digit code delivered to the user's registered email). Each user independently decides whether to enable 2FA and which method to use.
+
+2FA is configured from **Settings → Authentication → Two-Factor Auth**. The tab header shows a green bullet when 2FA is active for your account.
+
+### Enabling TOTP
+
+1. Settings → Authentication → Two-Factor Auth → **Set up TOTP**
+2. Scan the displayed QR code with your authenticator app, or paste the secret manually
+3. Enter the 6-digit code your app currently shows to confirm
+4. Bambuddy displays **10 single-use backup codes** — save them in a password manager or print them. They are shown **only once**
+5. On next login, after entering username + password, Bambuddy prompts for the TOTP code
+
+### Enabling Email OTP
+
+1. Settings → Authentication → Two-Factor Auth → **Set up Email OTP**
+2. Bambuddy emails a 6-digit setup code to your registered address
+3. Enter the code to confirm; email 2FA is now active
+4. Requires [Advanced Auth via Email](#advanced-auth-via-email) to be configured (for SMTP delivery)
+
+### Backup Codes
+
+Each enrolled TOTP user receives 10 backup codes. Any backup code can substitute for the TOTP code once — after use it is consumed. Regenerate a fresh set any time from Settings → Two-Factor Auth (invalidates all prior codes).
+
+### Security Properties
+
+- **Brute-force protection** — per-user **and** per-IP rate limits on every verify attempt
+- **Replay protection** — a TOTP code cannot be accepted twice within the same 30-second window, on any of: setup, enable, verify, disable, backup-code regenerate
+- **Single-use challenge** — the pre-auth token issued between password and 2FA verification is a DB-backed single-use token bound to the browser via an HttpOnly cookie. It cannot be replayed on a different browser or reused after a successful verify
+- **Constant-time backup-code check** — all stored hashes are iterated on every attempt so the matching position in the list does not leak through timing
+- **Silent-replacement guard** — replacing an active TOTP requires verifying the current code first
+
+### Admin Reset
+
+An administrator with `users:update` can disable any user's 2FA (TOTP, Email OTP, and backup codes) from **Settings → Users → Edit user**. Disabling also bumps the user's `password_changed_at`, invalidating any JWT issued before the reset.
+
+---
+
+## Single Sign-On (OIDC / SSO)
+
+Bambuddy integrates with any standards-compliant OpenID Connect provider — **PocketID**, **Authentik**, **Keycloak**, **Google Workspace**, **Azure AD**, etc. The login page renders an SSO button for every enabled provider.
+
+OIDC providers are configured from **Settings → Authentication → SSO / OIDC** (admin only). The tab header shows a green bullet when at least one provider is enabled.
+
+### Adding a Provider
+
+1. Create a client on your identity provider with redirect URI `https://<your-bambuddy>/api/v1/auth/oidc/callback`
+2. Settings → Authentication → SSO / OIDC → **Add Provider**
+3. Fill in:
+    - **Name** — display name shown on the login page
+    - **Issuer URL** — must start with `https://` (HTTP is rejected; private/loopback/link-local IPs are rejected to prevent SSRF)
+    - **Client ID / Client Secret** — from the IdP. The client secret is encrypted at rest
+    - **Scopes** — default `openid email profile` (the `openid` scope is required)
+    - **Icon URL** (optional) — HTTPS only, rendered on the login page
+4. Toggle **Enabled** — the SSO button appears on the login page immediately
+
+### Account Linking & Auto-Provisioning
+
+Two independent toggles per provider:
+
+| Toggle | Default | Effect |
+|--------|:-------:|--------|
+| **Auto-create users** | Off | On first successful SSO login, create a new BamBuddy account for the verified email. Off → unknown emails are rejected |
+| **Auto-link existing accounts** | Off | On first successful SSO login where the verified email matches an existing local user, link the two accounts. Off → admins must pre-link manually to prevent silent takeover by an attacker-controlled IdP |
+
+Auto-link is gated by an additional check: if the target user already has any OIDC link, a second IdP cannot auto-link to the same account.
+
+### Security Properties
+
+- **PKCE (S256)** on every authorization request — safe for public clients without a secret
+- **`email_verified` enforcement** — the IdP must explicitly mark the email as verified; unverified claims are ignored
+- **Issuer / `aud` / `nonce` validation** on every callback — replayed or cross-client ID tokens are rejected
+- **State single-use** — the OIDC `state` is a DB-backed single-use token that is atomically consumed on callback
+- **Discovery-document SSRF hardening** — every URL pulled from the provider's `/.well-known/openid-configuration` (authorization_endpoint, token_endpoint, jwks_uri) is validated for scheme (http(s) only) **and** for private/loopback/link-local host IPs, so a compromised IdP cannot redirect the server's outbound calls at `169.254.169.254`, RFC1918, or loopback
+- **`/oidc/authorize` rate-limited** per-IP to prevent discovery-document request amplification
+- **OIDC users blocked from local password change / reset** — credentials live at the IdP, not in BamBuddy
+
+### Trailing-Slash Tolerance
+
+Both the admin-supplied issuer URL and the `issuer` claim returned by the discovery document are normalised (trailing slashes stripped) before the PyJWT `iss` check, so a provider that disagrees with itself by one byte (e.g. stores `https://idp/` but returns `https://idp` in the discovery doc) still works.
+
+---
+
 ## Security Details
 
 ### Password Storage
