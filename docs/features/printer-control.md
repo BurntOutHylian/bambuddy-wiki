@@ -342,6 +342,50 @@ Click the badge to open a dropdown and pick the mode. The command is sent via MQ
 
 ---
 
+## :material-arrow-up-down: Move Build Plate (Z-Jog)
+
+Move the build plate up or down directly from the printer card — useful for inspecting the plate through the camera after a print finishes, or for small manual positioning.
+
+### Bed-Jog Badge
+
+A compact **Bed** badge appears in the controls row, between the print-speed badge and the Stop / Pause buttons. Click it to open a small popover containing:
+
+- **↑ / ↓** buttons that move the plate by the selected step
+- A **step selector** — `1 / 10 / 50 mm`
+
+The badge is automatically disabled while a print is running.
+
+### Not-Homed Warning (Studio-style)
+
+After a print completes, the Z axis is usually no longer referenced. The first time you click up/down in a session, Bambuddy shows a warning modal matching the Bambu Studio / printer-touchscreen flow:
+
+| Action | What it does |
+|--------|--------------|
+| **Home Z** | Sends `G28 Z` and dismisses the dialog — click the jog again once homing completes |
+| **Move anyway** | Bypasses soft endstops (`M211 S0`) for this move, performs the jog, then re-enables endstops (`M211 S1`). The "already warned" flag is remembered for the rest of the browser session, so subsequent jogs go through without the dialog |
+| **Cancel** | Closes the dialog, no command is sent |
+
+!!! warning "Bypassing soft endstops"
+    The **Move anyway** option disables axis soft limits for a single move. Keep the step small (1 – 10 mm) until the plate is in a safe position — the printer firmware will still refuse moves that would physically crash the gantry, but it's on you to make sure the commanded distance is reasonable.
+
+### Permissions
+
+Both the jog and home actions require `printers:control`. With authentication enabled, anonymous and read-only users see the buttons greyed out.
+
+### Under the Hood
+
+| Endpoint | G-code Sent |
+|----------|-------------|
+| `POST /printers/{id}/bed-jog?distance=N` | `G91 / G1 ZN F600 / G90` |
+| `POST /printers/{id}/bed-jog?distance=N&force=true` | `M211 S0 / G91 / G1 ZN F600 / G90 / M211 S1` |
+| `POST /printers/{id}/home-axes?axes=z` | `G28 Z` |
+| `POST /printers/{id}/home-axes?axes=xy` | `G28 X Y` |
+| `POST /printers/{id}/home-axes?axes=all` | `G28` |
+
+The `distance` parameter is validated server-side to be non-zero and within ±200 mm.
+
+---
+
 ## :material-door: SD Card &amp; Door Status Badges
 
 The top status row of every printer card now shows two compact icon-only badges so you can see drive and enclosure state at a glance.
