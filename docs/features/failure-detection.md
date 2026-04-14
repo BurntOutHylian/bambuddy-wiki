@@ -69,7 +69,7 @@ Go to **Settings → Failure Detection**.
 
 - **Enable toggle** — turns the detection service on.
 - **Obico ML API URL** — base URL to your ML API, e.g. `http://192.168.1.10:3333`. Click **Test** to ping `/hc/`.
-- **External URL** (set in **Settings → General**) — the URL the ML API will use to fetch Bambuddy snapshots. This must be reachable from the ML API container, *not* from your browser. Usually the IP of your Bambuddy host.
+- **External URL** (set in **Settings → Network**) — the URL the ML API will use to fetch Bambuddy snapshots. This must be reachable from the ML API container, *not* from your browser. Usually the IP of your Bambuddy host.
 
 ### Tuning
 
@@ -109,7 +109,7 @@ The right column shows:
 ## Troubleshooting
 
 **"external_url not set — ML API cannot reach snapshot endpoint"**
-: Go to **Settings → General** and set the External URL to a hostname or IP the ML API container can reach.
+: Go to **Settings → Network** and set the External URL to a hostname or IP the ML API container can reach.
 
 **Test button returns an error**
 : Check the ML API is running (`docker compose ps ml_api`) and that port 3333 is exposed. Try `curl` from the Bambuddy host: `curl http://<obico-host>:3333/hc/`.
