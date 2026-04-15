@@ -193,6 +193,14 @@ When sorting by status, printers are ordered by priority:
 
 This makes it easy to spot printers that need attention in large print farms.
 
+### Collapsible Groups
+
+When sorting by **Status**, **Model**, or **Location**, printers are rendered inside collapsible section headers — click a header to expand or collapse that group. The Name sort stays as a flat grid.
+
+- Each group's collapsed state persists across page refreshes (stored per-browser in `localStorage`).
+- In selection mode, each section header shows a **Select All** button that selects every printer within that group.
+- Status groups appear in priority order (Error → Printing → Paused → Finished → Idle → Offline); the sort-direction toggle flips the order.
+
 ---
 
 ## :material-alert-decagram: HMS Error Monitoring
