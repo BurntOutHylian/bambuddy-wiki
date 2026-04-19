@@ -64,6 +64,18 @@ Each file shows:
 - Click ← to go back
 - Click root to return home
 
+### Folder sidebar preferences
+
+Two small toggles in the folder sidebar header let you tailor how the tree is rendered. Both preferences are stored in your browser and applied on every subsequent page load.
+
+| Toggle | What it does |
+|---|---|
+| **Wrap** | When off (default), long folder names are truncated with an ellipsis. When on, long names wrap across multiple lines so the full name stays visible. |
+| **Collapse** | When off (default), the folder tree opens with every level expanded. When on, only the top-level folders are shown on load — click the chevron to expand a branch. Toggling the preference also immediately re-collapses or re-expands the current tree. |
+
+!!! tip "When to enable Collapse"
+    If your library has many nested folders, turning on **Collapse** keeps the sidebar compact — you only see the top-level folders and drill into a branch when you need it. Small, flat libraries won't notice a difference because the toggle only affects nested folders; top-level folders are always visible.
+
 ### Sorting
 
 Sort files by:
