@@ -325,6 +325,16 @@ External (linked) files are never eligible for purge. The purge respects the sta
 
 The **"Purge old"** button only appears for users holding the new `library:purge` permission, which ships enabled by default on the built-in *Administrators* role. To grant it to an Operator role, add `library:purge` in Settings → Users → Groups.
 
+### Auto-purge (optional)
+
+Don't want to remember to run the purge every month? **Settings → File Manager → Auto-purge old files** runs the same operation automatically once per 24 hours:
+
+- Age threshold (minimum 7 days, maximum 10 years) — uses the same rule as the manual button
+- Include-never-printed checkbox
+- Default off; opt-in only so existing installs aren't surprised
+
+Auto-purge still respects the trash retention window — files are moved to Trash first, not deleted outright. The sweeper later hard-deletes them after the retention period. The 24-hour throttle means the setting is safe even though the underlying sweeper ticks every 15 minutes.
+
 ---
 
 ## :material-pencil: Renaming Files & Folders
