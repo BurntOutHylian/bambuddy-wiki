@@ -282,6 +282,79 @@ server {
 !!! warning "WebSocket Support"
     Make sure your reverse proxy supports WebSocket connections - this is required for real-time printer updates.
 
+### Reverse Proxy (Caddy)
+
+Caddy is a simpler alternative to Nginx with automatic HTTPS via Let's Encrypt. WebSockets and the correct forwarding headers work out of the box — no extra directives required.
+
+=== "Public domain (automatic HTTPS)"
+
+    `/etc/caddy/Caddyfile`:
+
+    ```caddy
+    bambuddy.yourdomain.com {
+        reverse_proxy localhost:8000
+    }
+    ```
+
+    Caddy will obtain and renew a Let's Encrypt certificate automatically, provided ports 80 and 443 are reachable from the internet and DNS points at your server.
+
+=== "Local network (self-signed)"
+
+    `/etc/caddy/Caddyfile`:
+
+    ```caddy
+    bambuddy.local {
+        reverse_proxy localhost:8000
+        tls internal
+    }
+    ```
+
+    `tls internal` makes Caddy mint a certificate from its own local CA. Install Caddy's root cert on your clients (`caddy trust` on the same machine, or copy `/var/lib/caddy/.local/share/caddy/pki/authorities/local/root.crt` to other devices) to avoid browser warnings.
+
+=== "Docker Compose"
+
+    ```yaml
+    services:
+      caddy:
+        image: caddy:2
+        restart: unless-stopped
+        ports:
+          - "80:80"
+          - "443:443"
+        volumes:
+          - ./Caddyfile:/etc/caddy/Caddyfile:ro
+          - caddy_data:/data
+          - caddy_config:/config
+        networks:
+          - bambuddy_net
+
+    volumes:
+      caddy_data:
+      caddy_config:
+    ```
+
+    In the Caddyfile, reference the Bambuddy service by its compose name instead of localhost:
+
+    ```caddy
+    bambuddy.yourdomain.com {
+        reverse_proxy bambuddy:8000
+    }
+    ```
+
+After editing the Caddyfile, reload without downtime:
+
+```bash
+sudo systemctl reload caddy
+# or, in Docker:
+docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+```
+
+!!! tip "Large file uploads"
+    Bambuddy accepts 3MF/G-code uploads that can exceed Caddy's default request limits only on slow connections. If uploads time out, add `request_body { max_size 500MB }` inside the site block.
+
+!!! warning "Do not proxy FTP, MQTT, SSDP, or bind ports"
+    Caddy (and Nginx) can only proxy HTTP(S). Virtual Printer's FTP/MQTT/SSDP/bind ports must remain directly reachable on the LAN — see [Virtual Printer → Required Ports](../features/virtual-printer.md#required-ports).
+
 ### Traefik Labels
 
 If you're using Traefik:
