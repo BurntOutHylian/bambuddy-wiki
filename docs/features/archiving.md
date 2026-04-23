@@ -577,6 +577,51 @@ Sort archives by:
 
 ---
 
+## :material-broom: Auto-Purge
+
+Your archive can grow forever. For admins who don't want to babysit disk usage, Bambuddy can automatically delete old archives on a daily cadence.
+
+### Enabling Auto-Purge
+
+Navigate to **Settings → General → Archive Settings**. Below the familiar toggles (auto-archive, save thumbnails, capture finish photo) there's an **Auto-purge old archives** section.
+
+1. Flip the toggle on.
+2. Set the age threshold (minimum 7 days, maximum 10 years, default 365).
+3. Changes save immediately with a confirmation toast — no separate Save button.
+
+A background sweeper runs every 15 minutes but throttles actual purge runs to once per 24 hours, so flipping the toggle does not trigger an immediate deletion — the next daily tick picks it up.
+
+### Manual Purge
+
+Need to clean up right now? Click **Purge archives now** in the same card. A modal opens with a live preview: "*N* archives · *size* would be deleted" plus up to five sample filenames. Adjust the age input to see the count update, then confirm.
+
+### What Gets Deleted
+
+Unlike the File Manager trash bin, **archives are hard-deleted**. There is no restore. For every archive older than the threshold the sweeper removes:
+
+- The database row
+- The 3MF file
+- The thumbnail
+- The timelapse (if any)
+- The source 3MF (if uploaded separately)
+- The F3D design file (if uploaded)
+- The photo folder
+
+Everything goes through the same safety-checked path as the single-archive delete button, so the existing "refuse to delete outside the archive directory" guards still apply.
+
+### Keeping Archives Safe
+
+If you want to make sure certain prints survive the purge:
+
+- **Download them first** — the 3MF and thumbnail are easy to grab individually.
+- **Favourite them** *(planned)* — a future release may exclude favourited archives from auto-purge.
+
+Auto-purge is off by default on new installs, so nothing disappears until you opt in.
+
+### Permissions
+
+Both the toggle and the manual purge require the `archives:delete_all` permission (Administrators group by default). Regular users don't see either UI.
+
 ## :material-lightbulb: Tips
 
 !!! tip "Batch Operations"
