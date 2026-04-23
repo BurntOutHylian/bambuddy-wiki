@@ -316,12 +316,21 @@ Admins can also change how long trashed files live on the Trash page itself (1�
 
 ## :material-broom: Purge Old Files (admin)
 
-For libraries that have grown into gigabytes, admins get a bulk **Purge old** action in the File Manager header. Pick an age threshold (e.g. "files not printed in 90 days"), see a live preview of how many files would move and how much disk that frees, then confirm — all matching files move to the Trash in one shot, where they sit for the retention window before being permanently deleted.
+For libraries that have grown into gigabytes, admins get a bulk **Purge old** action in the File Manager header. Pick an age threshold (e.g. "files not printed in 90 days"), see a live preview of how many files would move and how much disk that frees, then confirm.
 
-!!! tip "Use the checkbox"
-    The modal includes an **"Include files that have never been printed"** checkbox (on by default). Turn it off to limit the purge to files you've actually printed before — never-printed files fall back to their upload date for age.
+#### What happens when you click Purge
 
-External (linked) files are never eligible for purge. The purge respects the standard two-stage delete flow — nothing is destroyed immediately.
+- Matching files are moved to Trash — **they are not deleted from disk yet**.
+- You can restore them from Trash at any time until the retention window expires.
+- After retention, the trash sweeper permanently removes them from disk.
+- Files in external (linked) folders are skipped — Bambuddy never deletes bytes it does not own.
+
+Because files only move to Trash, the disk doesn't free up immediately. To reclaim the space right away, empty the Trash manually afterwards.
+
+#### How "old" is measured
+
+- Files with a print history → aged by their **last-printed date**.
+- Files that have never been printed → aged by **upload date**, and only when the "Include files that have never been printed" checkbox is on (default). Turn it off to limit the purge to files you've actually printed before.
 
 The **"Purge old"** button only appears for users holding the new `library:purge` permission, which ships enabled by default on the built-in *Administrators* role. To grant it to an Operator role, add `library:purge` in Settings → Users → Groups.
 

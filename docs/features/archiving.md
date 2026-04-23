@@ -593,11 +593,22 @@ A background sweeper runs every 15 minutes but throttles actual purge runs to on
 
 ### Manual Purge
 
-Need to clean up right now? Click **Purge archives now** in the same card. A modal opens with a live preview: "*N* archives · *size* would be deleted" plus up to five sample filenames. Adjust the age input to see the count update, then confirm.
+Need to clean up right now? The Archives page header has a **Purge old** button right next to Upload 3MF. It opens a modal with a live preview: "*N* archives · *size* would be deleted" plus up to five sample filenames. Adjust the age input to see the count update, then confirm.
+
+#### What happens when you click Purge
+
+- Each matching archive is permanently removed from the database.
+- The 3MF, thumbnail, timelapse, source 3MF, F3D design file, and photo folder are all deleted from disk.
+- **There is no trash bin for archives** — deletion is immediate and cannot be undone.
+- Reprinting an archive refreshes its age clock, so archives you still use are safe.
+
+### How "old" Is Measured
+
+The threshold is based on **the most recent time each archive was printed**, not its original creation date. When you reprint an archive Bambuddy reuses the same row and refreshes its completed-at timestamp, so reprinting a two-year-old archive yesterday moves its age clock back to yesterday. In practice: only archives you haven't actually used in a while get purged.
 
 ### What Gets Deleted
 
-Unlike the File Manager trash bin, **archives are hard-deleted**. There is no restore. For every archive older than the threshold the sweeper removes:
+Unlike the File Manager trash bin, **archives are hard-deleted**. There is no restore. For every archive past the threshold the sweeper removes:
 
 - The database row
 - The 3MF file
@@ -620,7 +631,7 @@ Auto-purge is off by default on new installs, so nothing disappears until you op
 
 ### Permissions
 
-Both the toggle and the manual purge require the `archives:delete_all` permission (Administrators group by default). Regular users don't see either UI.
+Both the toggle and the manual purge require the `archives:purge` permission (Administrators group by default). Regular users don't see either UI.
 
 ## :material-lightbulb: Tips
 
