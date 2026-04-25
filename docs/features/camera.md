@@ -661,6 +661,72 @@ When no print is running, the overlay shows:
 
 ---
 
+## :material-key-chain: Long-Lived Camera Tokens
+
+For Home Assistant, Frigate, kiosks, or any external integration that needs a stable camera URL, mint a long-lived token instead of refreshing the 60-minute browser tokens on a cron.
+
+### Creating a Token
+
+1. Go to **Settings** → **API Keys**
+2. Scroll to **Camera API Tokens** (below the Webhook Endpoints documentation)
+3. Enter a descriptive name (e.g., `Home Assistant`, `Kitchen Kiosk`, `Frigate`)
+4. Pick a lifetime (1–365 days, default 90)
+5. Click **Create**
+
+The plaintext token is displayed **exactly once** in a copy-to-clipboard modal. Save it now — it can never be retrieved again.
+
+### Using the Token
+
+Append the token as a query parameter to any camera-stream URL:
+
+```
+http://your-bambuddy/api/v1/printers/<printer_id>/camera/stream?token=bblt_<prefix>_<secret>
+```
+
+The same token works for snapshots:
+
+```
+http://your-bambuddy/api/v1/printers/<printer_id>/camera/snapshot?token=bblt_<prefix>_<secret>
+```
+
+### Home Assistant Example
+
+```yaml
+camera:
+  - platform: mjpeg
+    name: Bambu Lab X1C
+    mjpeg_url: http://bambuddy.local:8000/api/v1/printers/1/camera/stream?token=bblt_a1b2c3d4_…
+    still_image_url: http://bambuddy.local:8000/api/v1/printers/1/camera/snapshot?token=bblt_a1b2c3d4_…
+```
+
+### Security & Limits
+
+- **Maximum lifetime is 365 days.** Bambuddy explicitly rejects "never expires" because a leaked permanent token would be irrevocable footgun-by-design.
+- **Tokens are stored as a hash.** A DB dump can't be replayed against the camera endpoint.
+- **Camera-stream scope only.** A long-lived token cannot be used to call any other Bambuddy API.
+- **Revocable at any time.** Owners can revoke their own tokens; admins can revoke anyone's from the same panel.
+- **Last-used timestamp** is shown so you can identify dead config and clean up.
+
+### Permission Requirements
+
+Creating and managing camera tokens requires the `camera:view` permission — the same permission already needed for the existing 60-minute browser-side stream tokens. Default Viewers and Operators groups have it.
+
+To delegate token management to a non-admin user, ensure they're in a group with both `camera:view` and `settings:read` (so they can reach Settings → API Keys).
+
+### Revoking a Token
+
+1. Go to **Settings** → **API Keys** → **Camera API Tokens**
+2. Find the token in the list (use the `lookup_prefix` to identify it if you've forgotten the name)
+3. Click **Revoke**, confirm in the modal
+
+Any device using that token will lose access on the next request. There's no grace period.
+
+### Admin "All Users" View
+
+Administrators see an additional table titled **All users (admin view)** below their own tokens. It lists every active long-lived token across all users — useful for triage if a token is suspected of being leaked.
+
+---
+
 ## :material-lightbulb: Tips
 
 !!! tip "Timelapse Videos"
