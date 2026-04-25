@@ -107,6 +107,9 @@ The Bambuddy CA certificate is at:
 ### Step 2: Append the Bambuddy CA Certificate to Slicer
 
 The slicer's `printer.cer` file contains PEM certificates. You need to **append** the Bambuddy CA certificate to this file.
+    
+!!! note ""
+    The slicer's printer connection certificates are completely separate from the system keyring. 
 
 Open `printer.cer` in a text editor and:
 
@@ -119,6 +122,10 @@ Open `printer.cer` in a text editor and:
     Appending (rather than replacing) preserves your ability to connect to physical Bambu Lab printers while also enabling the virtual printer.
 
 **Certificate file locations:**
+    
+!!! warning "Certificate file location depends on installation options"
+    When changing the installation path or method, the files location may differ from the defaults listed below,
+    search for a file named `printer.cer` located in the `resources/cert/` subfolders.
 
 === "macOS"
     - **Bambu Studio:** `/Applications/BambuStudio.app/Contents/Resources/cert/printer.cer`
@@ -129,6 +136,7 @@ Open `printer.cer` in a text editor and:
     - **OrcaSlicer:** `C:\Program Files\OrcaSlicer\resources\cert\printer.cer`
 
 === "Linux"
+    Flatpaks and AppImages installations:
     - **Bambu Studio:** `~/.local/share/BambuStudio/resources/cert/printer.cer`
     - **OrcaSlicer:** `~/.local/share/OrcaSlicer/resources/cert/printer.cer`
 
