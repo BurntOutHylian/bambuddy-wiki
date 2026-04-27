@@ -226,11 +226,29 @@ Inject custom G-code at the start and/or end of prints for third-party bed-clear
 1. Go to **Settings → Workflow**
 2. Find the **G-code Injection** card
 3. For each printer model you use, enter:
-    - **Start G-code** — prepended before the first line of the print's G-code
+    - **Start G-code** — injected at the end of the printer's startup block, immediately before the first print move (matches where a slicer-side custom-start-gcode would land)
     - **End G-code** — appended after the last line of the print's G-code
 4. Changes save automatically when you click out of the text field
 
 Only printer models that you have connected appear in the list.
+
+### Placeholders
+
+Snippets can reference values from the print's 3MF header using `{name}` placeholders. These are resolved per print, so a snippet that drops the head to the top of the model works regardless of how tall the model is:
+
+| Placeholder | Resolves to | Example |
+|---|---|---|
+| `{max_layer_z}` | Top-layer Z height of the print, in mm | `G1 Z{max_layer_z} F600` → `G1 Z16.00 F600` |
+| `{max_print_height}` | Alias for `{max_layer_z}` | same |
+| `{total_layer_number}` | Total number of layers | `; layers={total_layer_number}` → `; layers=80` |
+| `{total_layers}` | Alias for `{total_layer_number}` | same |
+| `{total_filament_weight}` | Total filament weight in grams | `; weight={total_filament_weight}g` → `; weight=36.55g` |
+| `{total_filament_length}` | Total filament length in mm | |
+
+Any other key from the 3MF's `; HEADER_BLOCK_START` block is also addressable directly (lowercased, with spaces replaced by underscores and `[units]` suffixes stripped). Unknown placeholders are left in the snippet verbatim and a warning is logged — a typo never silently expands to an empty string.
+
+!!! warning "Always use `{max_layer_z}` for Z moves"
+    Hard-coding `G1 Z1` (or worse, leaving `Z` parameter empty) at end-of-print can damage prints, the print head, or push the AMS up off the printer when the model is taller than expected. Always use `{max_layer_z}` for end-of-print park moves.
 
 ### Enabling Per Queue Item
 
@@ -241,9 +259,10 @@ Only printer models that you have connected appear in the list.
 When the scheduler dispatches the print:
 
 1. Looks up the G-code snippets for the target printer's model
-2. Creates a **temporary copy** of the 3MF with the snippets injected
-3. Uploads the modified copy via FTP
-4. Cleans up the temporary file after upload
+2. Resolves any `{placeholder}` values from the 3MF header
+3. Creates a **temporary copy** of the 3MF with the snippets injected (start snippet anchored to `; MACHINE_START_GCODE_END`, end snippet appended)
+4. Uploads the modified copy via FTP
+5. Cleans up the temporary file after upload
 
 !!! info "Original Files Unchanged"
     The injection never modifies your archive or library files. A temporary copy is created for upload only.

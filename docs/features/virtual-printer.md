@@ -93,7 +93,7 @@ Each virtual printer uses these ports on its dedicated bind IP:
 !!! info "Required Step"
     The virtual printer uses TLS encryption with a self-signed CA certificate.
     On macOS and Windows, Bambu Studio and OrcaSlicer **do not use the system certificate store** — you must add the certificate directly to the slicer's `printer.cer` file.
-    On Linux, recent builds opt into the system CA store (`tls_cert_store_accepted: yes` in `BambuStudio.conf`); see the [Linux tab](#step-2-append-the-bambuddy-ca-certificate-to-slicer) below for the recommended path.
+    On Linux the right approach depends on how you installed the slicer: native `.deb` / `.rpm` packages can use the system CA store, but AppImage builds typically need the bundled `printer.cer` edited directly. See the [Linux tab](#step-2-append-the-bambuddy-ca-certificate-to-slicer) for both paths.
 
 ### Step 1: Locate the CA Certificate
 
@@ -137,12 +137,32 @@ Open `printer.cer` in a text editor and:
     - **OrcaSlicer:** `C:\Program Files\OrcaSlicer\resources\cert\printer.cer`
 
 === "Linux"
-    **Recommended: append to the system CA store**
+    The right approach depends on how you installed Bambu Studio / OrcaSlicer.
 
-    Recent Linux builds of Bambu Studio and OrcaSlicer trust the system CA bundle when
-    `tls_cert_store_accepted: yes` is set in `~/.config/BambuStudio/BambuStudio.conf`
-    (the default after first launch). This is the easiest path for AppImage and Flatpak
-    installs, where the bundled `printer.cer` is inside a read-only image.
+    **AppImage — extract and edit `printer.cer`**
+
+    The system CA store path is unreliable for AppImage builds even when
+    `tls_cert_store_accepted: yes` is set in `BambuStudio.conf` ([#1140](https://github.com/maziggy/bambuddy/issues/1140))
+    — the AppImage ships its own networking stack and doesn't always honour the
+    system bundle. Extract the AppImage, edit the bundled `printer.cer`, then
+    run from the extracted tree:
+
+    ```bash
+    ./Bambu_Studio_linux_*.AppImage --appimage-extract
+    # edit squashfs-root/usr/share/Bambu Studio/resources/cert/printer.cer
+    ./squashfs-root/AppRun
+    ```
+
+    Append the contents of `bbl_ca.crt` after the last `-----END CERTIFICATE-----`
+    in `printer.cer`, save, and run `./squashfs-root/AppRun`. You need to repeat
+    this each time you update the AppImage to a new version (the old extracted
+    tree won't pick up new slicer features).
+
+    **Native package install (`.deb` / `.rpm`) — system CA store**
+
+    Native packages link against the system OpenSSL and pick up the system CA
+    bundle when `tls_cert_store_accepted: yes` is set in
+    `~/.config/BambuStudio/BambuStudio.conf` (the default after first launch).
 
     Debian / Ubuntu / Mint / Raspberry Pi OS:
 
@@ -171,21 +191,14 @@ Open `printer.cer` in a text editor and:
         `update-ca-certificates` is a no-op — the tool only picks up files placed
         under `/usr/local/share/ca-certificates/` with a `.crt` extension.
 
-    **AppImage** — direct edit (alternative)
-
-    The `printer.cer` is bundled inside the AppImage's read-only squashfs. To edit it you
-    have to extract the AppImage, modify the cert, then run from the extracted tree:
-
-    ```bash
-    ./Bambu_Studio_linux_*.AppImage --appimage-extract
-    # edit squashfs-root/usr/share/Bambu Studio/resources/cert/printer.cer
-    ./squashfs-root/AppRun
-    ```
-
-    **Native package install** — direct edit (alternative)
+    If the system CA store doesn't work for your install (Flatpak sandboxes,
+    statically-linked builds, or AppImage despite the conf setting), fall back
+    to the direct-edit path:
 
     - **Bambu Studio (`.deb`/`.rpm`):** `/usr/share/Bambu Studio/resources/cert/printer.cer`
     - **OrcaSlicer (`.deb`/`.rpm`):** `/usr/share/OrcaSlicer/resources/cert/printer.cer`
+
+    Editing those requires `sudo` and gets reverted on every package update.
 
     These are owned by root; edit with `sudo`.
 
