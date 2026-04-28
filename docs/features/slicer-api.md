@@ -97,9 +97,32 @@ Jobs survive the lifetime of the Bambuddy process (kept in-memory for 30 minutes
 
 ## :material-account-cog: Picking presets
 
-Slice opens a modal with three dropdowns &mdash; **Printer**, **Process**, **Filament** &mdash; populated from your imported [Local Profiles](local-profiles.md) or [Cloud Profiles](cloud-profiles.md). All three must be picked before the **Slice** button enables.
+Slice opens a modal with **Printer**, **Process**, and one or more **Filament** dropdowns &mdash; populated from your imported [Local Profiles](local-profiles.md), [Cloud Profiles](cloud-profiles.md), and the slicer-bundled standard tier. The **Filament** rows render dynamically based on the picked plate's actual AMS slot usage:
+
+- **Single-color plate** &rarr; one filament dropdown.
+- **Multi-color plate** &rarr; one dropdown per AMS slot the print uses, each labeled `Filament N (PLA)` with a colour swatch.
+
+Pre-pick is automatic: each filament dropdown auto-selects against your imported / cloud / standard presets by exact `(filament_type, filament_colour)` match. You can override any pick before slicing.
+
+### Plate picker
+
+For multi-plate 3MFs the modal shows a plate picker first; pick the plate you want to slice, then the preset dropdowns appear for that plate's filament needs.
+
+### How Bambuddy knows the per-plate filament list
+
+| Source              | When                                       | Speed            |
+|---------------------|--------------------------------------------|------------------|
+| `slice_info.config` | The 3MF was already sliced by Bambu Studio | Instant          |
+| Preview-slice       | Unsliced project file                      | 3&ndash;30 s first time, instant on repeat |
+| Painted-face data   | Sidecar unreachable (fallback)             | Instant          |
+
+For unsliced project files Bambuddy runs a fast **preview-slice** via the sidecar to discover the canonical filament list (the slicer's own logic determines which painted regions the print actually uses). Results are cached per `(file, plate)` keyed on file content, so opening the modal a second time on the same plate is instant. If the sidecar can't be reached, Bambuddy falls back to scanning the painted-face quadtree data with a noise threshold &mdash; less precise but better than zero filaments.
 
 For 3MF inputs that already carry embedded settings (e.g. exports from Bambu Studio or OrcaSlicer), Bambuddy still applies your selected presets &mdash; but if the sidecar's CLI rejects that combination (a known issue with OrcaSlicer 2.3.x and the H2D printer), it transparently retries using the 3MF's *embedded* settings instead. The successful result is flagged with `used_embedded_settings: true` in the job state so you can tell which path won.
+
+### Tier priority
+
+Inside the SliceModal, dropdown sections are ordered **Imported &rarr; Cloud &rarr; Standard**, with auto-pick respecting the same priority when no metadata-aware match is found. Imported profiles win over cloud because they ship with parsed type / colour metadata, while cloud entries are listed by name only (Bambu Cloud rate-limits per-preset content fetches at the scale most users have). When a preset name appears in both tiers, Bambuddy backfills the cloud entry's metadata from the local entry so cross-listed profiles still get auto-picked correctly.
 
 ---
 
