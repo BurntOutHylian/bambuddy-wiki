@@ -2,6 +2,12 @@
 
 This guide walks you through assembling the SpoolBuddy from 3D-printed parts and electronics. Follow the steps in order — each section builds on the previous one.
 
+<div class="grid" markdown>
+![SpoolBuddy assembly — front angle](../assets/spoolbuddy-assembly-1.png)
+![SpoolBuddy assembly — three-quarter view](../assets/spoolbuddy-assembly-2.png)
+![SpoolBuddy assembly — side profile](../assets/spoolbuddy-assembly-3.png)
+</div>
+
 ---
 
 ## :material-printer-3d: Download Printed Parts

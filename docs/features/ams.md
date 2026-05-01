@@ -542,6 +542,20 @@ The filament mapping UI shows **L** (left) and **R** (right) badges next to each
 !!! note "Single-Nozzle Printers"
     On single-nozzle printers (X1C, P1S, A1, etc.), nozzle filtering is not applied. All AMS trays are available for matching as before.
 
+### Filament Track Switch (FTS) Support
+
+The **Filament Track Switch** is an external accessory for dual-nozzle printers that sits between an AMS and the printer's extruders, dynamically routing any AMS slot to either nozzle. With the FTS installed, the AMS is no longer wired to a single extruder — it can feed either one through the track switch.
+
+When Bambuddy detects the FTS (via `print.device.fila_switch` in the printer's MQTT push), the per-nozzle filter is automatically suppressed in the print modal:
+
+- **Without FTS** — each AMS unit feeds a fixed nozzle, so the dropdown only shows trays on the matching nozzle (preventing the "position of left hotend is abnormal" failure that comes from cross-nozzle assignment).
+- **With FTS installed** — every loaded AMS slot is selectable for any nozzle's filament, since the FTS handles the routing on the fly.
+
+**Routing badges:** slots currently fed into a track display an `[L]` or `[R]` badge in the dropdown, indicating which extruder the FTS is currently routing them to. Idle slots (not currently in any track) show no badge — they can be routed on demand.
+
+!!! note "Detection is automatic"
+    There's no setting to toggle. The FTS is detected from MQTT in real time, so plugging in or removing the accessory updates the dropdown behaviour on the next status push.
+
 ---
 
 ## :material-sync: Spoolman Integration

@@ -279,6 +279,29 @@ Bambu printers run calibration routines using internal gcode files stored under 
 
 ---
 
+### Wrong Plate Thumbnail on Printer Card During a Multi-Plate Print
+
+**Symptoms:** The printer card shows a thumbnail from a different plate than the one currently printing.
+
+**Cause:** Some firmware versions (e.g. P1S 01.10.00.00) only put the bare `.3mf` filename in the MQTT `gcode_file` field, omitting the `Metadata/plate_N.gcode` path. Without the plate path the cover route used to default to plate 1's thumbnail.
+
+**Resolution:** Fixed in 0.2.4b2. Bambuddy now records the plate it dispatched at publish time and prefers that record over parsing the gcode path. For prints started outside Bambuddy (e.g. Bambu Studio direct), the cover route additionally scans the downloaded 3MF for a unique `Metadata/plate_*.gcode` to identify the active plate. If you still see the wrong thumbnail on 0.2.4b2 or later, ensure the print was dispatched from Bambuddy and capture a support package — the resolved plate is logged at INFO level (`Cover: resolved plate N`).
+
+---
+
+### Cover Thumbnail Stuck Loading During an Active Print
+
+**Symptoms:** Printer card shows a loading state instead of a thumbnail; logs show `FTP connection timed out` to the printer.
+
+**Cause:** Bambu printers run a single-socket FTP server that prioritises the active print. While a print is running, concurrent FTP reads (for the cover thumbnail) sometimes time out — especially on large 3MF files (50 MB+) where the read window is tight. An aborted upload to the printer can also wedge the FTP session until the printer is restarted.
+
+**Resolution:** As of 0.2.4b2, Bambuddy registers the local archive 3MF in the cover-cache at dispatch time, so the cover route reads the file straight from disk rather than refetching it over FTP. This applies to any print dispatched **from Bambuddy** (archive card, file manager, queue). If you see this on a Studio-direct print:
+
+- Wait — the cover route caches successful downloads, so once it makes it through once subsequent loads are instant.
+- If FTP repeatedly times out, restart the printer to clear any stuck FTP session from a previous aborted upload.
+
+---
+
 ## :material-camera: Camera Issues
 
 ### Camera Won't Stream
