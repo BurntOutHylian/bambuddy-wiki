@@ -36,6 +36,23 @@ Refresh filament information for individual AMS slots:
 !!! tip "When to Re-read"
     Use this feature when you've swapped a spool but the AMS hasn't automatically detected the change, or if filament information seems incorrect.
 
+### Load / Unload Filament
+
+Drive Load and Unload directly from any AMS slot or external spool — no need to walk to the touchscreen:
+
+1. Hover over an AMS slot or external spool on the printer card
+2. Click the menu button (:material-dots-vertical:) that appears
+3. Select **Load** to feed that tray, or **Unload** to retract whatever is currently loaded
+
+!!! note "Availability"
+    The Load / Unload menu is hidden while the printer is `RUNNING`. Wait until the printer is idle.
+
+!!! info "Dual-extruder H2D"
+    On the H2D with two external spools, **Ext-L** (left) and **Ext-R** (right) each drive their own nozzle. Loading from Ext-R uses the right nozzle's actual current temperature for the load command (matching BambuStudio's behaviour); a sensible 215 °C fallback is used if the right nozzle reports as cold or unknown.
+
+!!! warning "Permission"
+    Load / Unload requires the `printers:control` permission — the same scope used to start, stop, pause, and resume prints.
+
 ### Configure AMS Slot
 
 Manually configure AMS slots for third-party or generic filaments. This tells the printer which filament profile to use for a specific slot (temperatures, flow rate, pressure advance).
