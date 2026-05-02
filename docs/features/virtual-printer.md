@@ -1,3 +1,22 @@
+---
+title: Virtual Printer
+description: Bambuddy poses as a Bambu Lab printer on your network so Bambu Studio / OrcaSlicer can send prints to it. Modes — Immediate, Review, Print Queue (with optional auto-dispatch and force-color-match), and Proxy.
+keywords:
+  - virtual printer
+  - bambu studio
+  - orca slicer
+  - send to printer
+  - print queue
+  - queue mode
+  - auto dispatch
+  - force color match
+  - filament color
+  - colour match
+  - proxy mode
+  - tailscale
+  - ssdp
+---
+
 # Virtual Printer
 
 > Send prints to Bambuddy directly from Bambu Studio or OrcaSlicer — even when your real printer is busy, offline, or doesn't exist yet.
@@ -53,7 +72,7 @@ The virtual printer supports four modes:
 |------|-------------|
 | **Immediate** | Files are archived automatically when received |
 | **Review** | Files go to pending uploads for manual review before archiving |
-| **Print Queue** | Files are archived AND added to the print queue (unassigned). An **Auto-dispatch** toggle controls whether incoming prints start automatically (enabled by default) or require manual dispatch. |
+| **Print Queue** | Files are archived AND added to the print queue (unassigned). Two toggles: **Auto-dispatch** controls whether incoming prints start automatically (enabled by default) or require manual dispatch. **Force color match** (off by default — opt-in) tells the scheduler to refuse to dispatch onto a printer that does not have the exact filament type and color loaded. Without it, the queue uses model-only matching and may pick a printer with the wrong colour loaded. |
 | **Proxy** | Forwards traffic directly to a real printer (remote printing) |
 
 The first three are **server modes** — Bambuddy runs its own FTP/MQTT servers and receives files locally. **Proxy mode** is different — Bambuddy uses transparent TCP proxying to forward traffic to a real printer, with end-to-end TLS between the slicer and printer for most protocols.
@@ -1030,6 +1049,21 @@ If automatic discovery doesn't work (VPN, remote, bridge mode):
 
 !!! tip "Send Button Location"
     In Bambu Studio/OrcaSlicer, the Send button is typically a small icon next to the large Print button, or accessible via the dropdown arrow on the Print button.
+
+#### Print Queue mode: Force color match
+
+When **Print Queue** mode is selected, two toggles appear on the VP card:
+
+- **Auto-dispatch** (on by default) — controls whether the queued job starts automatically or sits as `manual_start` until you click Start.
+- **Force color match** (off by default — opt-in) — when on, Bambuddy parses the per-slot filament requirements out of the sliced 3MF at upload time and pins them onto the queue item. The scheduler then refuses to dispatch onto a printer that does not have the exact filament **type and colour** loaded.
+
+**Why this is opt-in.** Without `Force color match`, the scheduler still validates filament **type** when the job is "Any [model]" assigned (so a PLA job won't auto-dispatch onto a printer with only PETG loaded), but it does **not** check colour — the first available printer of the target model wins. This matches Bambuddy's behaviour before the toggle existed; turning it on is strict enough that it can leave a job sitting in the queue if no printer has the right colour loaded, which is sometimes what you want and sometimes not.
+
+**When to turn it on.** If you have multiple printers of the same model and care about colour accuracy — e.g. you don't want a job sliced for matte white PLA running on a printer that has black PLA loaded just because it happens to be free first.
+
+**When to leave it off.** If your fleet runs the same colour on every printer of a given model, or you reload colour by hand and want the queue to keep moving regardless.
+
+Per-VP setting (so different virtual printers can have different policies if you have a "best-fit" VP and a "first-available" VP). The default for new and existing virtual printers is **off** — no behaviour change for upgraders.
 
 #### Why don't I see my AMS / filament slots in the slicer?
 
