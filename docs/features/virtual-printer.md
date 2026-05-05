@@ -269,181 +269,152 @@ Each time you switch to a different Bambuddy host:
 
 ## :material-shield-lock: Tailscale Integration (Optional)
 
-!!! info "Opt-in per virtual printer"
-    Tailscale integration is **off by default**. Enable the **Tailscale integration** toggle on
-    a virtual printer card when that VP should be reachable over your tailnet. The toggle
-    is purely informational — it surfaces the host's Tailscale IP and MagicDNS hostname on
-    the card so you know what to paste into the slicer's printer dialog. Users without
-    Tailscale aren't affected.
+!!! info "Per-VP Tailscale nodes"
+    Tailscale integration is **off by default**. When you flip the **Tailscale integration**
+    toggle on a virtual printer card, Bambuddy registers that VP as its own device in your
+    tailnet — with its own `100.x.x.x` IP and MagicDNS hostname (e.g.
+    `bambuddy-h2d-1.tailXXXX.ts.net`). Each VP is independent: VP1 and VP2 each get their
+    own Tailscale identity, so you can paste different IPs into the slicer for different
+    printers, all reachable from anywhere on your tailnet.
 
 ### What this gives you
 
-The practical benefit is **secure remote access**: your virtual printer becomes reachable
-from any tailnet device (laptop at work, phone on LTE, another site) over a private,
-end-to-end WireGuard-encrypted tunnel — without port forwarding, DDNS, reverse proxies, or
-exposing anything to the public internet.
-
-To bind a VP on the Tailscale interface, pick the `tailscale0` IP (`100.x.x.x`) from the
-**Bind IP** dropdown on the VP card. The Tailscale toggle does not change binding — that's
-controlled by `bind_ip` directly. The toggle's job is purely UI: showing you the right IP
-to paste into the slicer.
+**Secure remote access, per VP**: every Tailscale-exposed VP becomes reachable from any
+tailnet device (laptop at work, phone on LTE, another site) over a private, end-to-end
+WireGuard-encrypted tunnel — without port forwarding, DDNS, reverse proxies, or exposing
+anything to the public internet. The slicer connects to the VP's `100.x.x.x` exactly like
+it would a real printer on the LAN.
 
 !!! warning "Slicer-side caveat — CA import is still required"
-    Both **Bambu Studio** and **OrcaSlicer** only accept **IP addresses** (not hostnames) in
-    the Add Printer dialog. They also use a bundled BBL CA store for printer-MQTT trust,
-    not the system trust store, so even a publicly-trusted Let's Encrypt cert wouldn't
-    validate. **You still need to [import Bambuddy's self-signed CA](#certificate-installation)
-    into your slicer**, same as a LAN-mode install. Tailscale's role is the **private tunnel**
-    (reachability from anywhere, no port forwarding), not cert-import elimination.
+    Both **Bambu Studio** and **OrcaSlicer** validate printer TLS only against their bundled
+    BBL CA store, not the system trust store. So even though Tailscale would happily issue
+    Let's Encrypt certs, the slicer would reject them anyway. **You still need to
+    [import Bambuddy's self-signed CA](#certificate-installation) into your slicer**, same
+    as a LAN-mode install. Tailscale's role is **secure network reach + per-VP IPs** — not
+    cert-import elimination.
+
+### How it works
+
+A small Go sidecar (`bambuddy-tsd`) runs alongside Bambuddy and embeds Tailscale's
+[`tsnet`](https://tailscale.com/kb/1244/tsnet) library. For every VP with the Tailscale
+toggle on, the sidecar:
+
+1. Registers a node in your tailnet using the auth key from Settings → Virtual Printer →
+   Tailscale auth key (one-time setup; reused across VPs).
+2. Receives the assigned `100.x.x.x` IP and `bambuddy-<vp-name>.<tailnet>.ts.net` hostname.
+3. Forwards Tailscale-side traffic on the standard Bambu protocol ports
+   (8883 MQTT, 990 FTPS, 322 RTSPS, 6000 file transfer, 2024–2026, 50000–50100) to a
+   per-VP loopback target inside Bambuddy.
+
+The sidecar is shipped inside the Docker image and as a separate binary in
+`sidecar/tsd/bin/` for native installs. No host `tailscaled`, no `--operator` setup, no
+TUN device wrangling — userspace networking via `tsnet` handles all of it.
+
+### Setup — one-time installation auth key
+
+1. Generate a **reusable auth key** at
+   [login.tailscale.com/admin/settings/keys](https://login.tailscale.com/admin/settings/keys).
+   "Reusable" matters — Bambuddy uses one key to register every VP node. Tag the key as
+   you see fit (e.g. `tag:bambuddy`).
+2. In Bambuddy, go to **Settings → Virtual Printer → Tailscale auth key**, paste the key,
+   click **Save**. The value is encrypted at rest using the same Fernet key as TOTP/OIDC
+   secrets (`MFA_ENCRYPTION_KEY`).
+
+That's it. The key is reused for every Tailscale-exposed VP across the lifetime of the
+installation. Re-issue and re-paste when it expires.
+
+### Setup — per VP
+
+For each VP you want reachable over Tailscale:
+
+1. On the VP card, flip **Tailscale integration** on.
+2. Within a few seconds, the card shows the assigned `100.x.x.x (bambuddy-<name>-<id>.<tailnet>.ts.net)`
+   with a copy button.
+3. Paste that `100.x.x.x` into your slicer's **Add Printer** dialog.
+4. (One-time) [import Bambuddy's CA](#certificate-installation) into the slicer if you
+   haven't already.
+
+### Building the sidecar — native installs only
+
+Docker users get the sidecar baked into the image automatically; no action needed.
+
+For native (non-Docker) installs:
+
+```bash
+cd sidecar/tsd
+make build       # produces bin/bambuddy-tsd
+```
+
+Bambuddy resolves the binary in this order: the `BAMBUDDY_TSD_PATH` env var → the
+co-located `<repo>/sidecar/tsd/bin/bambuddy-tsd` → `bambuddy-tsd` on `$PATH`. Restart the
+Bambuddy service after building so it picks up the binary.
 
 ### When Tailscale is the right choice
 
 | You want… | Tailscale helps? |
 |---|---|
-| Print to Bambuddy from your laptop on another network | **Yes** — private tunnel + reachability |
+| Print to Bambuddy from your laptop on another network | **Yes** — private tunnel + per-VP reach |
 | Print from a friend's house or public wifi | **Yes** — no port forwarding needed |
+| Distinguish multiple VPs in the tailnet admin | **Yes** — each VP is its own device with its own hostname |
 | Eliminate the one-time CA import in Bambu Studio / Orca | **No** — slicer trusts only its bundled BBL CA |
-| Secure Proxy Mode's FTP data channel over the internet | **Yes** — WireGuard encrypts the tunnel |
 | Avoid exposing Bambuddy on the public internet | **Yes** — tailnet is private (CGNAT) |
-
-### Prerequisites
-
-Two things must be in place on the Bambuddy host:
-
-1. **Tailscale installed and the node authenticated** — `tailscaled` running, `tailscale up`
-   completed, the node shows as `active` in `tailscale status`.
-2. **The OS user running Bambuddy can talk to the Tailscale daemon** — usually automatic for
-   the user that ran `tailscale up`. If Bambuddy can't reach the daemon, the toggle will still
-   work but the IP/FQDN won't show on the card.
-
-### Installation — Native Bambuddy
-
-```bash
-curl -fsSL https://tailscale.com/install.sh | sh
-sudo systemctl enable --now tailscaled
-sudo tailscale up
-```
-
-Then go to the Bambuddy UI, flip the **Tailscale integration** toggle on the VP card you
-want to expose, and select the `tailscale0` IP from the **Bind IP** dropdown.
-
-### Installation — Docker
-
-The Bambuddy Docker image ships with the `tailscale` CLI pre-installed. `tailscaled` itself
-runs on the host.
-
-**Step 1 — Install and authenticate Tailscale on the Docker host** (same as native steps above).
-
-**Step 2 — Mount the tailscaled socket.** Edit `docker-compose.yml` and add this line under
-`volumes:` (or uncomment it if you have the stock compose file):
-
-```yaml
-      - /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock
-```
-
-**Step 3 — Recreate the container** (a restart won't pick up the new volume):
-
-```bash
-docker compose up -d --force-recreate
-```
-
-Then flip the VP toggle on and pick the Tailscale IP from the Bind IP dropdown.
-
-!!! warning "Host-side Tailscale is required"
-    The socket mount only works when `tailscaled` is running on the Docker host. The container
-    doesn't run its own tailscaled — Bambuddy just calls the `tailscale` CLI, which talks to
-    the host's daemon through the mounted socket.
-
-### Verifying it works
-
-When the toggle is on and Bambuddy can reach the daemon, the VP card shows a green-shielded
-row with `100.x.x.x (myhost.tailXXXX.ts.net)` and a copy-to-clipboard button. That IP is
-what you paste into the slicer's Add Printer dialog (after the one-time CA import).
 
 ### <a name="tailscale-troubleshooting"></a>Troubleshooting
 
-#### VP card doesn't show the Tailscale IP after enabling the toggle
+#### Toggle flips on but the VP card doesn't show a Tailscale IP
 
-Bambuddy couldn't reach the Tailscale daemon. Check in order:
+The sidecar couldn't register the node. Check the Bambuddy log for entries from
+`virtual_printer.manager` and `virtual_printer.tsd_client`. Usual causes:
 
-```bash
-which tailscale                    # must print a path
-sudo systemctl status tailscaled   # must be "active (running)"
-sudo tailscale status              # your node should be listed with a 100.x.x.x IP
-```
+- **Auth key not set** — Settings → Virtual Printer → Tailscale auth key is empty.
+  The error log says: *"No Tailscale auth key configured."*
+- **Auth key expired or single-use** — Tailscale rejected the registration. Generate a
+  new **reusable** key and paste it again.
+- **Sidecar binary missing** — log line: *"bambuddy-tsd binary not found; per-VP Tailscale
+  nodes are disabled."* Build with `make -C sidecar/tsd build` (native) or rebuild the
+  Docker image.
 
-If any check fails, go back to [Installation](#installation-native-bambuddy).
+#### How can I see the sidecar's view of the world?
 
-**Docker users** — if you forgot to mount the socket, Bambuddy logs this hint:
-
-```
-Running in Docker but /var/run/tailscale/tailscaled.sock is not mounted. Add
-`- /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock` to
-docker-compose.yml (under volumes:) and run Tailscale on the host to expose
-virtual printers over your tailnet.
-```
-
-After adding the mount, **`docker compose up -d --force-recreate`** — a plain `restart`
-doesn't apply volume changes.
-
-#### Node shows "offline" in `tailscale status` even though I just ran `tailscale up`
-
-Usually a stale node identity — the local daemon has a node key cached that the control plane
-has forgotten (expired, deleted from the admin console, or never registered properly). Fix:
+`bambuddy-tsd` exposes its RPC over a Unix socket. From inside the same machine that's
+running Bambuddy:
 
 ```bash
-sudo tailscale logout
-sudo tailscale up
-# Follow the auth URL in a browser
+# Locate the socket — defaults to <DATA_DIR>/tailscale/tsd.sock
+ls /opt/bambuddy/data/tailscale/tsd.sock     # native
+docker exec bambuddy ls /app/data/tailscale/tsd.sock  # Docker
+
+# List currently registered nodes
+curl --unix-socket /path/to/tsd.sock http://unix/nodes | jq
 ```
 
-If that still doesn't register, nuke the state and start fresh:
+#### Node shows "offline" in the Tailscale admin console
 
-```bash
-sudo systemctl stop tailscaled
-sudo rm /var/lib/tailscale/tailscaled.state
-sudo systemctl start tailscaled
-sudo tailscale up
-```
+The sidecar may have crashed or lost network. Check Bambuddy's log for *"bambuddy-tsd
+exited unexpectedly"* — that's the trigger. Restart Bambuddy; the sidecar comes back up
+and re-registers the nodes from the persisted state in `<DATA_DIR>/tailscale/vp_<id>/`.
+The same Tailscale identity is reused (auth key only needed on first registration).
 
-#### `tailscaled` won't start inside an LXC container (Proxmox)
+#### Removing a VP doesn't remove it from the tailnet
 
-```
-tstun.New("tailscale0") failed; /dev/net/tun does not exist
-modprobe: FATAL: Module tun not found
-```
+Today, deleting a VP in Bambuddy tears down the running node but doesn't revoke the
+device entry in your tailnet admin. Remove it manually at
+[login.tailscale.com/admin/machines](https://login.tailscale.com/admin/machines).
+(A future release will tear down both.)
 
-LXC containers don't expose TUN by default. On the **Proxmox host**:
-
-1. Select the LXC container → **Options** → **Features**
-2. Check **TUN device** (and **Nesting** if you haven't already)
-3. Stop and start the container:
-   ```bash
-   pct stop <CTID> && pct start <CTID>
-   ```
-   A regular reboot from inside the container is not enough — it needs a stop/start cycle.
-
-Or edit `/etc/pve/lxc/<CTID>.conf` directly on the Proxmox host:
-
-```
-features: nesting=1
-lxc.cgroup2.devices.allow: c 10:200 rwm
-lxc.mount.entry: /dev/net/tun dev/net/tun none bind,create=file
-```
-
-#### Slicer still shows "untrusted cert" / "failed to connect" after enabling Tailscale
+#### Slicer still shows "untrusted cert" / "failed to connect"
 
 Expected if you skipped the CA import. Both Bambu Studio and OrcaSlicer trust only their
-bundled BBL CA store for printer-MQTT connections — system-trusted certs (LE included) are
-rejected. Import Bambuddy's CA into the slicer
-[as described above](#certificate-installation), then connect to the Tailscale IP.
+bundled BBL CA store for printer-MQTT connections — system-trusted certs are rejected.
+Import Bambuddy's CA into the slicer [as described above](#certificate-installation),
+then connect to the per-VP Tailscale IP.
 
 #### FQDN copy button shows "Failed to copy"
 
-`navigator.clipboard` is only available in secure contexts (HTTPS or `localhost`). On plain
-HTTP Bambuddy falls back to a legacy `document.execCommand('copy')` path, which works on
-almost all browsers. If both fail (very old browser, hostile extension), select the hostname
-manually and copy with Ctrl/Cmd-C.
+`navigator.clipboard` is only available in secure contexts (HTTPS or `localhost`). On
+plain HTTP Bambuddy falls back to a legacy `document.execCommand('copy')` path. If both
+fail (very old browser, hostile extension), select the hostname manually and copy with
+Ctrl/Cmd-C.
 
 ---
 
