@@ -54,8 +54,21 @@ Click **+ Add Spool** to create a new inventory entry.
 | **Label Weight** | Net weight as printed on the spool (default: 1000g) |
 | **Quantity** | Number of identical spools to create (1–100, default: 1) |
 | **Color** | Visual color picker with recent colors, brand palettes, and hex input |
-| **Extra colours** | Optional. Comma-separated list of 2 to 8 hex stops (e.g. `EC984C,#6CD4BC,A66EB9,D87694`) — paste from a site like 3dfilamentprofiles.com to render the swatch as a gradient (or a colour wheel pie when **Subtype = Multicolor**). Leave blank for a solid colour. |
-| **Effect** | Optional. Visual rendering hint covering: surface effects (*Sparkle*, *Wood*, *Marble*, *Glow*, *Matte*), sheen variants (*Silk*, *Galaxy*, *Rainbow*, *Metal*, *Translucent*), and structural variants (*Gradient*, *Dual Color*, *Tri Color*, *Multicolor*). Layered on top of the colour swatch — does **not** change the slicer profile or anything the printer sees. Choosing *Multicolor* with **Extra colours** set renders the swatch as a colour-wheel pie even without setting the spool's *Subtype*. |
+| **Extra colours** | Optional. Comma-separated list of 2 to 8 hex stops (e.g. `EC984C,#6CD4BC,A66EB9,D87694`). Leave blank for a solid colour. Without set *Effect* they will be rendered as gradient, or as colour wheel pie when **Subtype = Multicolor** is set |
+| **Effect** | Optional. Visual rendering hint, see below.  |
+
+#### Effects
+Effects can be use to give a visual hint on the filaments look, covering: 
+
+ - surface effects (*Sparkle*, *Wood*, *Marble*, *Glow*, *Matte*), 
+ - sheen variants (*Silk*, *Galaxy*, *Rainbow*, *Metal*, *Translucent*)
+ - structural variants (*Gradient*, *Dual Color*, *Tri Color*, *Multicolor*). 
+    
+They are rendered on top of the colour swatch, using the information from **Extra Colours** — effects do **not** change the slicer profile or anything the printer sees. 
+
+Colour lists for multi-color filaments can easily be gathered from a site like 3dfilamentprofiles.com and pasted into the **Extra Colours** field.
+
+![Effect overview for all subtypes](../assets/inventory-effect-overview.png){ .screenshot }
 
 ### Quick Add (Stock Spools)
 
@@ -355,6 +368,58 @@ In the **List** view the user can set a row item as Purchased. Once set as Purch
 In the **Logistics** view a graph shows predicted stock variations based on reorder quantity and data.
 
 
+## :material-printer: Printable Labels
+
+Bambuddy can generate PDF labels for any selection of spools. The label carries the colour swatch (with multi-colour gradient stripes for spools that have extra colours), brand, material, name, the spool ID, and a QR code that deep-links straight back to that spool's row in Bambuddy when scanned with a phone — useful for finding the right spool in storage.
+
+### Two ways to start
+
+- **Per-spool icon** — every spool card and table row has a small printer icon. Click it to print just that one spool's label.
+- **Header bulk button** — *Print labels…* in the inventory page header opens the picker pre-selected with every spool currently visible (i.e. matching your filters). Refine the selection in the modal.
+
+### The picker
+
+The modal lists the spools you can choose from with checkboxes. From the top:
+
+- **Search** — substring match across name, brand, and `#ID` (e.g. type `#42` to jump to spool 42).
+- **Material chips** — narrow the visible list to a single material (PLA, PETG, …). Chips are derived from your library so you only see what you actually have.
+- **Select all visible / Deselect visible / Clear all** — additive selection actions. *Select all visible* adds the currently filtered list to your selection without dropping anything you'd already picked outside the filter; *Clear all* wipes the entire selection. This means you can build a selection across filters: filter to PLA, click *Select all visible*, switch to PETG, click *Select all visible* again — both groups are now selected.
+- **Live "X selected" count** in the modal title so you always know what you're about to print.
+
+### Template sizes
+
+Pick the template that matches your label stock or holder:
+
+| Template | Size | Per page | Best for |
+|---|---|---|---|
+| **AMS holder** | 30 × 15 mm | 1 | The popular [Makerworld AMS Filament Label Holder](https://makerworld.com/en/models/752566) (model 752566). Compact identification at-a-glance. |
+| **Box label** | 62 × 29 mm | 1 | Brother PT/QL or Dymo small labels. Carries name, brand, material, storage location, and a QR code. |
+| **Avery L7160** | 38.1 × 63.5 mm | 21 | EU sheet stock — A4 paper, 21 labels per sheet (3 columns × 7 rows). |
+| **Avery 5160** | 25.4 × 66.7 mm | 30 | US sheet stock — Letter paper, 30 labels per sheet (3 columns × 10 rows). |
+
+Sizes are exact — the renderer measures in points, not pixels, so Avery layouts align to <0.1 mm and don't drift across the page.
+
+### What's on each label
+
+- **Colour swatch** — the spool's `rgba`. Spools with multi-colour stops (`extra_colors`) render as vertical stripes in the order you saved them.
+- **Brand · material · subtype** — small text row.
+- **Spool name** — bold; what you set in the spool form.
+- **Storage location** — italic, only on the box-label and Avery templates (the AMS holder is too small).
+- **Spool ID** — large bold `#N`, anchored at the bottom-left. This is the killer field for telling 8 spools of "PLA White" apart in your closet, especially partials.
+- **QR code** — links to `/inventory?spool=<id>` so a phone scan jumps straight to the spool's row in Bambuddy. The AMS-holder template skips the QR (no room at 30 × 15 mm) — the spool ID and swatch are enough at AMS-bay distance.
+
+### What ends up in the QR
+
+The QR encodes the URL Bambuddy can be reached at + `/inventory?spool=<id>`. By default this is the request's own scheme + host (`https://bambuddy.your-server.local/inventory?spool=42`) — if you set **Settings → External URL** to your public Bambuddy address, the QR uses that instead, so a phone outside your LAN can still resolve it.
+
+### Print or save
+
+The PDF opens in a new browser tab. From there you can either print directly to a label printer / sheet of blanks, or save the PDF and print later. Since rendering is server-side via [ReportLab](https://docs.reportlab.com/), the output is byte-identical across browsers — no "Chrome prints differently than Firefox" surprises.
+
+### Limits
+
+- Up to **500 spools per request**. Plenty for any realistic batch (a full Avery L7160 sheet is 21, a sheet of 5160 is 30; 500 covers ~24 sheets).
+- The renderer truncates names with an ellipsis if a spool name is too long for the chosen template — for the AMS-holder size in particular, the *spool ID* is what matters; long names get truncated. If your spool name is consistently being truncated, consider a shorter `name` field on the spool itself.
 
 ---
 

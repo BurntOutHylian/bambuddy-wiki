@@ -113,10 +113,42 @@ volumes:
 | `LOG_LEVEL` | `INFO` | Log level: `DEBUG`, `INFO`, `WARNING`, `ERROR` |
 | `HA_URL` | _(none)_ | Home Assistant URL for automatic integration (e.g., `http://192.168.1.100:8123`) |
 | `HA_TOKEN` | _(none)_ | Home Assistant Long-Lived Access Token for automatic integration |
+| `TRUSTED_FRAME_ORIGINS` | _(none)_ | Comma-separated origins permitted to embed Bambuddy via `<iframe>` (e.g., `http://homeassistant.local:8123`). Required for the HA Webpage dashboard panel. |
 | `DATABASE_URL` | _(none)_ | External PostgreSQL connection string (e.g., `postgresql+asyncpg://user:pass@host:5432/bambuddy`). Uses built-in SQLite when not set. |
 
 !!! info "Home Assistant Integration"
     When both `HA_URL` and `HA_TOKEN` are set, the Home Assistant integration is automatically enabled and configured. The URL and token fields become read-only in the UI. This is primarily used by the [Home Assistant add-on](https://github.com/hobbypunk90/homeassistant-addon-bambuddy/) for zero-configuration setup.
+
+!!! tip "Embedding Bambuddy in Home Assistant's Webpage panel"
+    By default, Bambuddy emits strict iframe-blocking headers (`X-Frame-Options: SAMEORIGIN` and CSP `frame-ancestors 'none'`) to protect against clickjacking on internet-exposed deployments. This blocks embedding Bambuddy inside Home Assistant's Webpage dashboard panel even on a trusted LAN, because HA on port 8123 and Bambuddy on port 8000 are different origins to the browser.
+
+    To allow embedding from your HA instance, set:
+
+    ```yaml
+    environment:
+      - TRUSTED_FRAME_ORIGINS=http://homeassistant.local:8123
+    ```
+
+    Replace the URL with your actual HA origin (`scheme://host[:port]` only — no paths, no wildcards). Multiple origins can be comma-separated. When set, `X-Frame-Options` is removed and the CSP `frame-ancestors` directive lists `'self'` plus your configured origins. Plain Docker / bare-metal deployments without this variable retain the strict default.
+
+    **HTTPS Home Assistant (Nabu Casa, custom domain, anything with TLS in front):** browsers refuse to embed an HTTP iframe inside an HTTPS page (mixed-content block — Chrome and Firefox enforce this and the user can't override it for individual sites). If your HA instance is HTTPS, Bambuddy must also be reachable over HTTPS.
+
+    The simplest recipe for HA users is the **[Nginx Proxy Manager addon](https://github.com/hassio-addons/addon-nginx-proxy-manager)** from the HA addon store. NPM does DNS-01 Let's Encrypt against your own domain, so no port-forwarding is required and Bambuddy never has to be exposed publicly:
+
+    1. Install and start the Nginx Proxy Manager addon from the HA addon store.
+    2. In NPM, add a **Proxy Host**: domain `bambuddy.<your-domain>`, scheme `http`, forward host `<bambuddy-host-on-LAN>`, forward port `8000`.
+    3. Under **SSL**, request a Let's Encrypt cert via **DNS Challenge** for `bambuddy.<your-domain>` — NPM has dropdowns for Cloudflare, Hetzner, Route53, and many other DNS providers.
+    4. Set `TRUSTED_FRAME_ORIGINS=https://homeassistant.<your-domain>` (or whatever your HA HTTPS origin is) on Bambuddy and restart.
+    5. In HA, add a Webpage dashboard panel with `url: https://bambuddy.<your-domain>`.
+
+    Both ends are HTTPS, the certificate is publicly trusted, and Bambuddy stays on the LAN — DNS-01 only needs API access to your DNS provider, not inbound connectivity. If you don't have a domain, any other reverse proxy works the same way (Caddy, Traefik, plain nginx outside the addon ecosystem) — the only requirement is that Bambuddy ends up behind a trusted HTTPS certificate that matches the URL you embed in the Webpage panel.
+
+    **Path-prefixed reverse proxies** (e.g. `https://example.com/bambuddy/` via Traefik path prefix, nginx `location /bambuddy/`, Cloudflare Tunnel with path routing) are supported as of v0.2.4b2 — assets load correctly under any subpath. API calls still go to the host root, so the proxy must route `/api/v1/*` to the same Bambuddy upstream as `/bambuddy/*` (most users either reverse-proxy Bambuddy at a dedicated subdomain or expose `/api/v1/` at the host root alongside the subpath).
+
+!!! warning "HA Ingress / addon-based subpath embedding is not supported"
+    Home Assistant's add-on Ingress system serves the addon at a rotating per-session subpath (`/api/hassio_ingress/<token>/`). Even though the asset-path fix above lets the SPA boot under that prefix, the rest of the SPA still assumes a stable origin: API calls, React Router basename, PWA manifest scope, service-worker scope, and push-notification subscriptions are all anchored at the URL the SPA was first installed under. Making each of those subpath-aware would mean rewriting how the SPA bootstraps and would create new failure modes around PWA installs and deep-link reloads.
+
+    The supported HA embedding path is the Webpage panel + `TRUSTED_FRAME_ORIGINS` flow above. Note that terminating TLS inside an HA addon container with a self-signed certificate is not a viable workaround: modern browsers (Chrome, Edge) block self-signed certificates on raw LAN IPs with no `thisisunsafe`-style override available. If you maintain an HA add-on that wraps Bambuddy, the practical path is to have the user front Bambuddy with the Nginx Proxy Manager addon (or any other reverse proxy that produces a publicly trusted certificate via DNS-01), then embed Bambuddy's HTTPS URL via Webpage panel.
 
 !!! tip "External PostgreSQL Database"
     By default, Bambuddy uses a built-in SQLite database that requires zero configuration. For larger setups or when you prefer a dedicated database server, set `DATABASE_URL` to point to an external PostgreSQL instance:

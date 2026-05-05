@@ -1,3 +1,22 @@
+---
+title: Virtual Printer
+description: Bambuddy poses as a Bambu Lab printer on your network so Bambu Studio / OrcaSlicer can send prints to it. Modes — Immediate, Review, Print Queue (with optional auto-dispatch and force-color-match), and Proxy.
+keywords:
+  - virtual printer
+  - bambu studio
+  - orca slicer
+  - send to printer
+  - print queue
+  - queue mode
+  - auto dispatch
+  - force color match
+  - filament color
+  - colour match
+  - proxy mode
+  - tailscale
+  - ssdp
+---
+
 # Virtual Printer
 
 > Send prints to Bambuddy directly from Bambu Studio or OrcaSlicer — even when your real printer is busy, offline, or doesn't exist yet.
@@ -53,13 +72,13 @@ The virtual printer supports four modes:
 |------|-------------|
 | **Immediate** | Files are archived automatically when received |
 | **Review** | Files go to pending uploads for manual review before archiving |
-| **Print Queue** | Files are archived AND added to the print queue (unassigned). An **Auto-dispatch** toggle controls whether incoming prints start automatically (enabled by default) or require manual dispatch. |
+| **Print Queue** | Files are archived AND added to the print queue (unassigned). Two toggles: **Auto-dispatch** controls whether incoming prints start automatically (enabled by default) or require manual dispatch. **Force color match** (off by default — opt-in) tells the scheduler to refuse to dispatch onto a printer that does not have the exact filament type and color loaded. Without it, the queue uses model-only matching and may pick a printer with the wrong colour loaded. |
 | **Proxy** | Forwards traffic directly to a real printer (remote printing) |
 
 The first three are **server modes** — Bambuddy runs its own FTP/MQTT servers and receives files locally. **Proxy mode** is different — Bambuddy uses transparent TCP proxying to forward traffic to a real printer, with end-to-end TLS between the slicer and printer for most protocols.
 
-!!! warning "Server modes don't show AMS data in the slicer — and that's intentional"
-    A virtual printer in Immediate / Review / Print Queue mode has no real printer behind it, so the slicer has nothing to query — no AMS slots, no loaded filaments, no temperatures. You set filaments **manually** in the slicer and hit **Send**, same as slicing offline. If you want live AMS data in the slicer, you want **Proxy Mode**. See [Why don't I see my AMS / filament slots in the slicer?](#why-dont-i-see-my-ams-filament-slots-in-the-slicer) for the full explanation.
+!!! tip "Server modes with a target printer mirror its live state to the slicer"
+    When you set a **target printer** on an Immediate / Review / Print Queue VP, the slicer sees the target's live AMS slots, FTS / dual-extruder routing, k-profiles, nozzle / temperature state, and the camera stream — same view a direct slicer connection would get, but with Bambuddy's queue / archive / review workflow on the receiving end. AMS load / dry / calibration commands from the slicer pass through to the real printer too. See [Live target-printer mirror](#live-target-printer-mirror) for setup and the access-code requirement for camera. If you don't set a target, the VP behaves as a pure file receiver with no live data — which is fine if you only need slice-and-archive.
 
 ---
 
@@ -76,7 +95,7 @@ Each virtual printer uses these ports on its dedicated bind IP:
 | SSDP | 2021 | UDP | Printer discovery (same LAN only, not needed for VPN/remote) |
 | MQTT | 8883 | TCP/TLS | Printer communication |
 | File Transfer | 6000 | TCP/TLS | Verify job & file upload tunnel (proxy mode) |
-| RTSP Camera | 322 | TCP/TLS | Camera streaming for X1/H2/P2 series (proxy mode) |
+| RTSP Camera | 322 | TCP/TLS | Camera streaming for X1/H2/P2 series (proxy mode, **and non-proxy modes when a target printer is configured** — required for the slicer's live camera view to work through the VP) |
 | FTPS | 990 | TCP/TLS | File transfer control |
 | FTP Data | 50000-50100 | TCP | File transfer passive data |
 
@@ -250,257 +269,152 @@ Each time you switch to a different Bambuddy host:
 
 ## :material-shield-lock: Tailscale Integration (Optional)
 
-!!! info "Opt-in per virtual printer"
-    Tailscale integration is **off by default**. Enable the **Tailscale integration** toggle on
-    a virtual printer card when you want that VP to be reachable over your tailnet with a
-    Let's Encrypt certificate provisioned via `tailscale cert`. Users without Tailscale aren't
-    affected in any way.
+!!! info "Per-VP Tailscale nodes"
+    Tailscale integration is **off by default**. When you flip the **Tailscale integration**
+    toggle on a virtual printer card, Bambuddy registers that VP as its own device in your
+    tailnet — with its own `100.x.x.x` IP and MagicDNS hostname (e.g.
+    `bambuddy-h2d-1.tailXXXX.ts.net`). Each VP is independent: VP1 and VP2 each get their
+    own Tailscale identity, so you can paste different IPs into the slicer for different
+    printers, all reachable from anywhere on your tailnet.
 
 ### What this gives you
 
-When enabled, Bambuddy:
+**Secure remote access, per VP**: every Tailscale-exposed VP becomes reachable from any
+tailnet device (laptop at work, phone on LTE, another site) over a private, end-to-end
+WireGuard-encrypted tunnel — without port forwarding, DDNS, reverse proxies, or exposing
+anything to the public internet. The slicer connects to the VP's `100.x.x.x` exactly like
+it would a real printer on the LAN.
 
-1. Queries the host's Tailscale daemon for the MagicDNS hostname (e.g. `myhost.tailXXXX.ts.net`)
-2. Calls `tailscale cert` to obtain a Let's Encrypt cert for that hostname
-3. Serves that cert on the VP's MQTT and FTPS listeners
-4. Advertises the Tailscale hostname in SSDP so other tailnet devices discover the printer
+!!! warning "Slicer-side caveat — CA import is still required"
+    Both **Bambu Studio** and **OrcaSlicer** validate printer TLS only against their bundled
+    BBL CA store, not the system trust store. So even though Tailscale would happily issue
+    Let's Encrypt certs, the slicer would reject them anyway. **You still need to
+    [import Bambuddy's self-signed CA](#certificate-installation) into your slicer**, same
+    as a LAN-mode install. Tailscale's role is **secure network reach + per-VP IPs** — not
+    cert-import elimination.
 
-The practical benefit for most users is **secure remote access**: your virtual printer becomes
-reachable from any tailnet device (laptop at work, phone on LTE, another site) over a private,
-end-to-end WireGuard-encrypted tunnel — without port forwarding, DDNS, reverse proxies, or
-exposing anything to the public internet.
+### How it works
 
-!!! warning "Important — slicer-side caveat"
-    Both **Bambu Studio** and **OrcaSlicer** only accept **IP addresses** (not hostnames) in
-    the Add Printer dialog. This means the Let's Encrypt cert's hostname validation **never
-    applies** — the slicer connects to a Tailscale `100.x.x.x` IP, the cert is issued for the
-    MagicDNS hostname, and the hostnames don't match.
+A small Go sidecar (`bambuddy-tsd`) runs alongside Bambuddy and embeds Tailscale's
+[`tsnet`](https://tailscale.com/kb/1244/tsnet) library. For every VP with the Tailscale
+toggle on, the sidecar:
 
-    **Practical consequence:** you still need to [import Bambuddy's self-signed CA](#certificate-installation)
-    into your slicer, same as a LAN-mode install. The Tailscale toggle provides the **private
-    tunnel** (reachability from anywhere, no port forwarding), not cert-import elimination.
+1. Registers a node in your tailnet using the auth key from Settings → Virtual Printer →
+   Tailscale auth key (one-time setup; reused across VPs).
+2. Receives the assigned `100.x.x.x` IP and `bambuddy-<vp-name>.<tailnet>.ts.net` hostname.
+3. Forwards Tailscale-side traffic on the standard Bambu protocol ports
+   (8883 MQTT, 990 FTPS, 322 RTSPS, 6000 file transfer, 2024–2026, 50000–50100) to a
+   per-VP loopback target inside Bambuddy.
 
-    If a future slicer version accepts hostnames, or you use a third-party tool that connects
-    by hostname, the LE cert will validate cleanly with no import needed.
+The sidecar is shipped inside the Docker image and as a separate binary in
+`sidecar/tsd/bin/` for native installs. No host `tailscaled`, no `--operator` setup, no
+TUN device wrangling — userspace networking via `tsnet` handles all of it.
+
+### Setup — one-time installation auth key
+
+1. Generate a **reusable auth key** at
+   [login.tailscale.com/admin/settings/keys](https://login.tailscale.com/admin/settings/keys).
+   "Reusable" matters — Bambuddy uses one key to register every VP node. Tag the key as
+   you see fit (e.g. `tag:bambuddy`).
+2. In Bambuddy, go to **Settings → Virtual Printer → Tailscale auth key**, paste the key,
+   click **Save**. The value is encrypted at rest using the same Fernet key as TOTP/OIDC
+   secrets (`MFA_ENCRYPTION_KEY`).
+
+That's it. The key is reused for every Tailscale-exposed VP across the lifetime of the
+installation. Re-issue and re-paste when it expires.
+
+### Setup — per VP
+
+For each VP you want reachable over Tailscale:
+
+1. On the VP card, flip **Tailscale integration** on.
+2. Within a few seconds, the card shows the assigned `100.x.x.x (bambuddy-<name>-<id>.<tailnet>.ts.net)`
+   with a copy button.
+3. Paste that `100.x.x.x` into your slicer's **Add Printer** dialog.
+4. (One-time) [import Bambuddy's CA](#certificate-installation) into the slicer if you
+   haven't already.
+
+### Building the sidecar — native installs only
+
+Docker users get the sidecar baked into the image automatically; no action needed.
+
+For native (non-Docker) installs:
+
+```bash
+cd sidecar/tsd
+make build       # produces bin/bambuddy-tsd
+```
+
+Bambuddy resolves the binary in this order: the `BAMBUDDY_TSD_PATH` env var → the
+co-located `<repo>/sidecar/tsd/bin/bambuddy-tsd` → `bambuddy-tsd` on `$PATH`. Restart the
+Bambuddy service after building so it picks up the binary.
 
 ### When Tailscale is the right choice
 
 | You want… | Tailscale helps? |
 |---|---|
-| Print to Bambuddy from your laptop on another network | **Yes** — private tunnel + reachability |
+| Print to Bambuddy from your laptop on another network | **Yes** — private tunnel + per-VP reach |
 | Print from a friend's house or public wifi | **Yes** — no port forwarding needed |
-| Eliminate the one-time CA import in Bambu Studio / Orca | **No** — both slicers only accept IPs |
-| Secure Proxy Mode's FTP data channel over the internet | **Yes** — WireGuard encrypts the tunnel |
+| Distinguish multiple VPs in the tailnet admin | **Yes** — each VP is its own device with its own hostname |
+| Eliminate the one-time CA import in Bambu Studio / Orca | **No** — slicer trusts only its bundled BBL CA |
 | Avoid exposing Bambuddy on the public internet | **Yes** — tailnet is private (CGNAT) |
-
-### Prerequisites
-
-Three things must be in place on the Bambuddy host before the toggle will succeed:
-
-1. **Tailscale installed and the node authenticated** — `tailscaled` running, `tailscale up`
-   completed, the node shows as `active` in `tailscale status`.
-2. **`tailscale set --operator=<user>`** — the OS user running Bambuddy needs the Tailscale
-   operator capability to call `tailscale cert`. Native install: usually `bambuddy`. Docker:
-   the PUID your container runs as (default `1000`; check with
-   `docker inspect bambuddy --format '{{.Config.User}}'`).
-3. **HTTPS enabled for your tailnet** — one-time tailnet-wide toggle at
-   [login.tailscale.com/admin/dns](https://login.tailscale.com/admin/dns) → **HTTPS Certificates**
-   → Enable. **MagicDNS** must also be enabled (usually it already is).
-
-If any of these is missing, the toggle won't succeed and Bambuddy logs a specific hint — see
-[Troubleshooting](#tailscale-troubleshooting) below.
-
-### Installation — Native Bambuddy
-
-```bash
-# 1. Install Tailscale on the Bambuddy host
-curl -fsSL https://tailscale.com/install.sh | sh
-sudo systemctl enable --now tailscaled
-
-# 2. Authenticate the node (opens a browser URL)
-sudo tailscale up
-
-# 3. Grant cert access to the Bambuddy service user
-sudo tailscale set --operator=bambuddy
-```
-
-Then enable **HTTPS Certificates** at [login.tailscale.com/admin/dns](https://login.tailscale.com/admin/dns),
-go to the Bambuddy UI and flip the **Tailscale integration** toggle on the virtual-printer card
-you want to expose.
-
-### Installation — Docker
-
-The Bambuddy Docker image ships with the `tailscale` CLI pre-installed. `tailscaled` itself
-runs on the host.
-
-**Step 1 — Install and authenticate Tailscale on the Docker host** (same as native steps 1–2 above).
-
-**Step 2 — Grant cert access to the container's user:**
-
-```bash
-# Default Bambuddy container runs as UID 1000 — adjust if you override PUID
-sudo tailscale set --operator=$(getent passwd 1000 | cut -d: -f1)
-```
-
-**Step 3 — Mount the tailscaled socket.** Edit `docker-compose.yml` and add this line under
-`volumes:` (or uncomment it if you have the stock compose file):
-
-```yaml
-      - /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock
-```
-
-**Step 4 — Recreate the container** (a restart won't pick up the new volume):
-
-```bash
-docker compose up -d --force-recreate
-```
-
-**Step 5 — Enable HTTPS for your tailnet** at [login.tailscale.com/admin/dns](https://login.tailscale.com/admin/dns),
-then flip the toggle on the VP card.
-
-!!! warning "Host-side Tailscale is required"
-    The socket mount only works when `tailscaled` is running on the Docker host. The container
-    doesn't run its own tailscaled — Bambuddy just calls the `tailscale` CLI, which talks to
-    the host's daemon through the mounted socket.
-
-### Verifying it works
-
-After flipping the toggle, look at the Bambuddy log. You want to see:
-
-```
-[VP <name>] Using Tailscale cert for myhost.tailXXXX.ts.net
-MQTT SSL cert info: subject=CN=myhost.tailXXXX.ts.net
-```
-
-If instead you see `Tailscale available (...) but cert provisioning failed, falling back to
-self-signed cert`, walk through [Troubleshooting](#tailscale-troubleshooting).
-
-On the VP card, when the integration is active, the MagicDNS hostname appears with a
-copy-to-clipboard button next to the serial number.
-
-### Fallback behaviour
-
-Tailscale integration is designed to fail gracefully. If anything goes wrong at VP start:
-
-| Situation | Result |
-|-----------|--------|
-| Tailscale binary not found | Self-signed cert used; one-line hint logged |
-| Tailscale daemon not running / not authenticated | Self-signed cert used; reason logged |
-| HTTPS certs disabled in tailnet | Self-signed cert used; admin URL in the error |
-| Operator capability not granted | Self-signed cert used; suggested `tailscale set` logged |
-| `tailscale cert` times out or fails | Self-signed cert used; stderr logged |
-
-The virtual printer always starts regardless of Tailscale availability, so the toggle is safe
-to leave on permanently even if Tailscale is temporarily broken or offline.
 
 ### <a name="tailscale-troubleshooting"></a>Troubleshooting
 
-#### Toggle rejects with "Tailscale is not installed on this host"
+#### Toggle flips on but the VP card doesn't show a Tailscale IP
 
-Bambuddy couldn't find the `tailscale` binary, or couldn't reach the daemon's socket. Check
-in order:
+The sidecar couldn't register the node. Check the Bambuddy log for entries from
+`virtual_printer.manager` and `virtual_printer.tsd_client`. Usual causes:
 
-```bash
-which tailscale                    # must print a path
-sudo systemctl status tailscaled   # must be "active (running)"
-sudo tailscale status              # your node should be listed with a 100.x.x.x IP
-```
+- **Auth key not set** — Settings → Virtual Printer → Tailscale auth key is empty.
+  The error log says: *"No Tailscale auth key configured."*
+- **Auth key expired or single-use** — Tailscale rejected the registration. Generate a
+  new **reusable** key and paste it again.
+- **Sidecar binary missing** — log line: *"bambuddy-tsd binary not found; per-VP Tailscale
+  nodes are disabled."* Build with `make -C sidecar/tsd build` (native) or rebuild the
+  Docker image.
 
-If any check fails, go back to [Installation](#installation-native-bambuddy).
+#### How can I see the sidecar's view of the world?
 
-**Docker users** — if you forgot to mount the socket, Bambuddy logs this hint verbatim:
-
-```
-Running in Docker but /var/run/tailscale/tailscaled.sock is not mounted. Add
-`- /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock` to
-docker-compose.yml (under volumes:) and run Tailscale on the host to enable
-Let's Encrypt certs for virtual printers.
-```
-
-After adding the mount, **`docker compose up -d --force-recreate`** — a plain `restart`
-doesn't apply volume changes.
-
-#### Cert provisioning fails — "Access denied: cert access denied"
-
-The Tailscale daemon doesn't trust the OS user running Bambuddy to request certs. Run once
-on the host:
+`bambuddy-tsd` exposes its RPC over a Unix socket. From inside the same machine that's
+running Bambuddy:
 
 ```bash
-sudo tailscale set --operator=<user-running-bambuddy>
+# Locate the socket — defaults to <DATA_DIR>/tailscale/tsd.sock
+ls /opt/bambuddy/data/tailscale/tsd.sock     # native
+docker exec bambuddy ls /app/data/tailscale/tsd.sock  # Docker
+
+# List currently registered nodes
+curl --unix-socket /path/to/tsd.sock http://unix/nodes | jq
 ```
 
-- **Native:** usually `bambuddy` (the service user from the installer)
-- **Docker:** the UID your container runs as. Find it with
-  `docker inspect bambuddy --format '{{.Config.User}}'`, then look up the username with
-  `getent passwd <uid>`
+#### Node shows "offline" in the Tailscale admin console
 
-After running the command, flip the VP toggle off and back on to retry cert provisioning.
+The sidecar may have crashed or lost network. Check Bambuddy's log for *"bambuddy-tsd
+exited unexpectedly"* — that's the trigger. Restart Bambuddy; the sidecar comes back up
+and re-registers the nodes from the persisted state in `<DATA_DIR>/tailscale/vp_<id>/`.
+The same Tailscale identity is reused (auth key only needed on first registration).
 
-#### Cert provisioning fails — "your Tailscale account does not support getting TLS certs"
+#### Removing a VP doesn't remove it from the tailnet
 
-HTTPS certs aren't enabled on your tailnet. Go to
-[login.tailscale.com/admin/dns](https://login.tailscale.com/admin/dns) and enable
-**HTTPS Certificates**. Also confirm **MagicDNS** is enabled in the same page (usually it is).
-Both are one-time tailnet-wide toggles.
+Today, deleting a VP in Bambuddy tears down the running node but doesn't revoke the
+device entry in your tailnet admin. Remove it manually at
+[login.tailscale.com/admin/machines](https://login.tailscale.com/admin/machines).
+(A future release will tear down both.)
 
-#### Node shows "offline" in `tailscale status` even though I just ran `tailscale up`
+#### Slicer still shows "untrusted cert" / "failed to connect"
 
-Usually a stale node identity — the local daemon has a node key cached that the control plane
-has forgotten (expired, deleted from the admin console, or never registered properly). Fix:
-
-```bash
-sudo tailscale logout
-sudo tailscale up --operator=<user>
-# Follow the auth URL in a browser
-```
-
-If that still doesn't register, nuke the state and start fresh:
-
-```bash
-sudo systemctl stop tailscaled
-sudo rm /var/lib/tailscale/tailscaled.state
-sudo systemctl start tailscaled
-sudo tailscale up --operator=<user>
-```
-
-#### `tailscaled` won't start inside an LXC container (Proxmox)
-
-```
-tstun.New("tailscale0") failed; /dev/net/tun does not exist
-modprobe: FATAL: Module tun not found
-```
-
-LXC containers don't expose TUN by default. On the **Proxmox host**:
-
-1. Select the LXC container → **Options** → **Features**
-2. Check **TUN device** (and **Nesting** if you haven't already)
-3. Stop and start the container:
-   ```bash
-   pct stop <CTID> && pct start <CTID>
-   ```
-   A regular reboot from inside the container is not enough — it needs a stop/start cycle.
-
-Or edit `/etc/pve/lxc/<CTID>.conf` directly on the Proxmox host:
-
-```
-features: nesting=1
-lxc.cgroup2.devices.allow: c 10:200 rwm
-lxc.mount.entry: /dev/net/tun dev/net/tun none bind,create=file
-```
-
-#### Slicer still shows "untrusted cert" after enabling Tailscale
-
-Expected — see the caveat at the top of this section. Both Bambu Studio and OrcaSlicer
-connect by IP, not hostname, and the LE cert is issued for the MagicDNS hostname so hostname
-validation fails. Import Bambuddy's CA into the slicer
-[as described above](#certificate-installation).
+Expected if you skipped the CA import. Both Bambu Studio and OrcaSlicer trust only their
+bundled BBL CA store for printer-MQTT connections — system-trusted certs are rejected.
+Import Bambuddy's CA into the slicer [as described above](#certificate-installation),
+then connect to the per-VP Tailscale IP.
 
 #### FQDN copy button shows "Failed to copy"
 
-`navigator.clipboard` is only available in secure contexts (HTTPS or `localhost`). On plain
-HTTP Bambuddy falls back to a legacy `document.execCommand('copy')` path, which works on
-almost all browsers. If both fail (very old browser, hostile extension), select the hostname
-manually and copy with Ctrl/Cmd-C.
+`navigator.clipboard` is only available in secure contexts (HTTPS or `localhost`). On
+plain HTTP Bambuddy falls back to a legacy `document.execCommand('copy')` path. If both
+fail (very old browser, hostile extension), select the hostname manually and copy with
+Ctrl/Cmd-C.
 
 ---
 
@@ -1031,30 +945,34 @@ If automatic discovery doesn't work (VPN, remote, bridge mode):
 !!! tip "Send Button Location"
     In Bambu Studio/OrcaSlicer, the Send button is typically a small icon next to the large Print button, or accessible via the dropdown arrow on the Print button.
 
-#### Why don't I see my AMS / filament slots in the slicer?
+#### Print Queue mode: Force color match
 
-This is the **#1 question** about server modes — and the answer is: **you're not supposed to**.
+When **Print Queue** mode is selected, two toggles appear on the VP card:
 
-A virtual printer in Immediate / Review / Print Queue mode is **not connected to a real printer**. It's a file receiver. There is no AMS, no loaded filaments, no spool weights, no nozzle temperature — because there is no printer behind it. The slicer has nothing to query, so the AMS panel stays empty and filament slots fall back to generic defaults.
+- **Auto-dispatch** (on by default) — controls whether the queued job starts automatically or sits as `manual_start` until you click Start.
+- **Force color match** (off by default — opt-in) — when on, Bambuddy parses the per-slot filament requirements out of the sliced 3MF at upload time and pins them onto the queue item. The scheduler then refuses to dispatch onto a printer that does not have the exact filament **type and colour** loaded.
 
-**This is by design.** The whole point of server modes is to decouple slicing from printing:
+**Why this is opt-in.** Without `Force color match`, the scheduler still validates filament **type** when the job is "Any [model]" assigned (so a PLA job won't auto-dispatch onto a printer with only PETG loaded), but it does **not** check colour — the first available printer of the target model wins. This matches Bambuddy's behaviour before the toggle existed; turning it on is strict enough that it can leave a job sitting in the queue if no printer has the right colour loaded, which is sometimes what you want and sometimes not.
 
-- Slice now, pick a real printer later
-- Send a file from a laptop while the printer is offline
-- Queue jobs for whichever printer is free when you get to the farm
-- Archive sliced jobs without printing them at all
+**When to turn it on.** If you have multiple printers of the same model and care about colour accuracy — e.g. you don't want a job sliced for matte white PLA running on a printer that has black PLA loaded just because it happens to be free first.
 
-**How to slice correctly for a virtual printer in server mode:**
+**When to leave it off.** If your fleet runs the same colour on every printer of a given model, or you reload colour by hand and want the queue to keep moving regardless.
 
-1. In the slicer, pick the **printer model** that matches the real printer you intend to print on (X1C, P1S, A1, etc.). The virtual printer announces its model via SSDP so the slicer picks the right profile.
-2. Set filaments **manually** — choose the material/color/brand for each extruder or AMS slot the way you would if you were slicing offline for a printer that isn't powered on.
-3. Use the **Send** button. The sliced `.3mf` lands in Bambuddy (archived, queued, or pending review depending on mode).
-4. When you're ready to print, send the file to a **real printer** from Bambuddy's UI (Print Queue, Archive, or File Manager). At that point the real printer's AMS is used and slot mapping happens on the printer itself.
+Per-VP setting (so different virtual printers can have different policies if you have a "best-fit" VP and a "first-available" VP). The default for new and existing virtual printers is **off** — no behaviour change for upgraders.
 
-!!! tip "I want live AMS data in the slicer"
-    Then you want **Proxy Mode**, not a server mode. Proxy Mode forwards the slicer ↔ printer conversation to a real printer, so the slicer sees the real AMS, live temperatures, and can start prints directly. See [Proxy Mode](#material-earth-proxy-mode-remote-printing) below.
+#### <a name="live-target-printer-mirror"></a>Live target-printer mirror in non-proxy modes
 
-    Server modes are for the opposite use case: slicing without a printer in the loop.
+If you set a **target printer** on an Immediate / Review / Print Queue VP, the slicer sees the target printer's live state through the VP — AMS slots, FTS / dual-extruder routing, k-profiles, nozzle / bed / chamber temperatures, lights, and camera. AMS load / dry / calibration commands the user issues from the slicer pass through to the real printer. The slicer behaves as if it were directly connected to the real printer for *reads* and *device management*, while file uploads still terminate at Bambuddy and feed the queue / archive / review workflow. **No second MQTT session is opened on the printer** — the bridge fans out from Bambuddy's existing per-printer subscription, so the firmware in-flight budget is not affected.
+
+This is what makes it possible to slice an FTS / dual-extruder file with the VP selected as the active device — Studio reads the target printer's nozzle diameters, AMS contents, and FTS ID through the VP and bakes the right values into the `.3mf`. The earlier guidance "don't slice with the VP active" no longer applies when the VP has a target printer set.
+
+**Setup:** in Settings → Virtual Printer, set the target printer for each Immediate / Review / Print Queue VP. The bridge starts automatically.
+
+**Access-code requirement for camera.** The slicer authenticates the camera RTSPS stream with whatever access code is stored in its profile for the device it bound to. For the camera to authenticate against the real printer, **the VP's access code must match the target printer's LAN access code**. Set them equal in Settings → Virtual Printer, then re-add the VP in the slicer so it picks up the new code. MQTT and FTP work either way; only the camera path needs the match because RTSPS auth happens between the slicer and the real printer's broker.
+
+**If you don't want a live mirror.** Leave the target printer unset, or use the VP without binding it to a real printer at all. The slicer will see synthetic stub state and you set filaments manually — the original "file receiver" behaviour, useful when you want to slice for a class of printer without picking a specific one yet.
+
+If you want the slicer to be in continuous live contact with a real printer — including for slicing-time hardware fields — use **Proxy Mode**, not a server-mode VP.
 
 ### Proxy Mode
 

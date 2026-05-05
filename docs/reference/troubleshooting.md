@@ -130,6 +130,22 @@ A1 and A1 Mini printers have different FTP/SSL behavior than X1C/P1S printers. T
    - Delete printer from Bambuddy
    - Re-add with correct details
 
+### Printer Looks Like It's Trying to Re-Start the Last Print After Power-On
+
+**Symptoms:** Every time you power the printer on, the touchscreen shows the last printed file's name, and it looks as though Bambuddy or the printer is about to start that print again.
+
+**This is the printer's firmware, not Bambuddy.** The Bambu Lab firmware (A1, A1 mini, P1, X1, H2D) keeps the **last** `gcode_file` and `subtask_name` in its MQTT status payload after a print finishes. Those fields persist across power cycles and are echoed in every status push, even when the printer is sitting idle. The touchscreen displays them too.
+
+Bambuddy only acts on a real **state transition** (`IDLE → PREPARE / RUNNING`). It never sends a print command just because the last filename is still visible. You can confirm this in your support bundle log — a queued auto-start always shows up as a `print_scheduler` "Queue check" → "Starting queue item N" → `PRINT COMMAND` line. If you don't see those lines around the power-on time, Bambuddy isn't starting anything.
+
+**What to check on the printer:**
+
+1. **Touchscreen prompt** — if a "Resume last print?" or "Start print?" dialog is open, dismiss it on the printer itself.
+2. **HMS errors** — codes like `0500_C010` (MicroSD card read/write exception) can leave the printer in a state where the touchscreen still shows a print as "ready". Reseat or replace the MicroSD card; if the error persists, contact Bambu Lab Support.
+3. **Saved task on the printer** — the printer may keep the file in its own queue/history. Clear it from the printer's storage UI directly.
+
+If you have **already** deleted the queue item in Bambuddy and removed the file from the printer's backup/cache folder and it still happens, the issue is with the printer firmware or hardware, not with Bambuddy.
+
 ---
 
 ## :material-sd: SD Card Issues
@@ -538,20 +554,24 @@ Bambuddy v0.2.0b+ uses SQLite WAL (Write-Ahead Logging) mode, which significantl
 
 ### Slicer shows no AMS / no filament slots / no temperatures
 
-**This is expected in server modes (Immediate / Review / Print Queue).**
+If your VP **has a target printer configured**, the slicer should show live AMS slots, FTS / dual-extruder routing, k-profiles, temperatures, and the camera stream — same view as a direct slicer connection. If the panel is empty, check:
 
-A virtual printer in a server mode is a file receiver — there is no real printer behind it, so the slicer has nothing to query. The AMS panel stays empty, filament slots show generic defaults, and there are no live temperatures.
+1. **Target printer set?** Settings → Virtual Printer → check the VP has a target printer selected. The mirror only runs when this is set.
+2. **Target printer connected?** Bambuddy must be online with the real printer (Settings → Printers shows green status). The bridge has nothing to mirror if Bambuddy itself isn't talking to the printer.
+3. **Restart Bambuddy** after setting the target — the bridge attaches at VP startup.
 
-**How to slice anyway:**
+If your VP has **no target printer set**, the slicer sees synthetic stub state by design — the VP is a pure file receiver. Set filaments manually, hit Send, then dispatch to a real printer from Bambuddy's UI later. To enable live mirror, set a target printer in Settings → Virtual Printer.
 
-1. In the slicer, pick the printer **model** that matches where you plan to print (X1C, P1S, A1, etc.)
-2. Set filaments **manually** for each extruder / AMS slot — same as slicing offline
-3. Click **Send** (not Print) to transfer the sliced file to Bambuddy
-4. Send to a real printer later from Bambuddy's UI (Print Queue, Archive, File Manager) — real AMS mapping happens on the printer at print time
+See the [Virtual Printer guide](../features/virtual-printer.md#live-target-printer-mirror) for the full explanation.
 
-**If you want live AMS data in the slicer:** switch the virtual printer to **Proxy Mode**. Proxy Mode relays the slicer ↔ printer conversation to a real printer, so the slicer sees the real AMS, temperatures, and can start prints directly.
+### Slicer camera shows "LAN connection failed"
 
-See the [Virtual Printer guide](../features/virtual-printer.md#why-dont-i-see-my-ams-filament-slots-in-the-slicer) for the full explanation.
+Camera streaming requires the VP's **access code to match the target printer's** LAN access code. The slicer authenticates the camera RTSPS stream with the access code stored in its profile, and that auth happens against the real printer. Fix:
+
+1. Settings → Virtual Printer → set the VP's access code equal to the target printer's LAN access code (Settings → Printers shows the printer's code)
+2. Re-add the VP in Bambu Studio / Orca Slicer so it picks up the new code
+
+MQTT and FTP work either way — only the camera path needs the access codes to match.
 
 ### Slicer can't find the Virtual Printer
 
