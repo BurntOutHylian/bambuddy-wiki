@@ -118,11 +118,45 @@ For multi-plate 3MFs the modal shows a plate picker first; pick the plate you wa
 
 For unsliced project files Bambuddy runs a fast **preview-slice** via the sidecar to discover the canonical filament list (the slicer's own logic determines which painted regions the print actually uses). Results are cached per `(file, plate)` keyed on file content, so opening the modal a second time on the same plate is instant. If the sidecar can't be reached, Bambuddy falls back to scanning the painted-face quadtree data with a noise threshold &mdash; less precise but better than zero filaments.
 
-For 3MF inputs that already carry embedded settings (e.g. exports from Bambu Studio or OrcaSlicer), Bambuddy still applies your selected presets &mdash; but if the sidecar's CLI rejects that combination (a known issue with OrcaSlicer 2.3.x and the H2D printer), it transparently retries using the 3MF's *embedded* settings instead. The successful result is flagged with `used_embedded_settings: true` in the job state so you can tell which path won.
+For 3MF inputs that already carry embedded settings (e.g. exports from Bambu Studio or OrcaSlicer), Bambuddy still applies your selected presets &mdash; but if the sidecar's CLI rejects that combination (see the OrcaSlicer caveat in [Troubleshooting](#orcaslicer-mid-2026-cli-breakage)), it transparently retries using the 3MF's *embedded* settings instead. The successful result is flagged with `used_embedded_settings: true` in the job state so you can tell which path won.
 
 ### Tier priority
 
 Inside the SliceModal, dropdown sections are ordered **Imported &rarr; Cloud &rarr; Standard**, with auto-pick respecting the same priority when no metadata-aware match is found. Imported profiles win over cloud because they ship with parsed type / colour metadata, while cloud entries are listed by name only (Bambu Cloud rate-limits per-preset content fetches at the scale most users have). When a preset name appears in both tiers, Bambuddy backfills the cloud entry's metadata from the local entry so cross-listed profiles still get auto-picked correctly.
+
+---
+
+## :material-package: Slicer Bundles (.bbscfg)
+
+Bambuddy can import a Bambu Studio **Printer Preset Bundle** (`.bbscfg`) and slice through it without re-uploading the JSON profile triplet on every print. Useful when you've curated a printer + process + filament set in Bambu Studio and want every Bambuddy slice to use that exact triplet.
+
+### Export from Bambu Studio
+
+1. Open Bambu Studio
+2. **File &rarr; Export &rarr; Export Preset Bundle**
+3. Pick **Printer preset bundle (.bbscfg)** &mdash; the first option
+4. Save the `.bbscfg` file somewhere you can reach from your browser
+
+The bundle is a zip containing one printer preset, every process preset that belongs to it, and every filament preset compatible with it &mdash; plus a `bundle_structure.json` manifest. Each inner JSON is a delta with an `inherits:` chain pointing at the BBL system presets baked into the slicer.
+
+### Import into Bambuddy
+
+1. **Settings &rarr; Slicer &rarr; Slicer Bundles**
+2. Click **Upload bundle**, pick the `.bbscfg`
+3. The card shows the printer name, number of process / filament presets, and a delete button
+
+Re-uploading the same `.bbscfg` is a no-op &mdash; Bambuddy hashes the file content and reuses the existing import.
+
+### Slice via a bundle
+
+1. Open the slice modal on any library file or archive
+2. The new **Slicer bundle** dropdown at the top of the modal lists every imported bundle
+3. Pick a bundle &rarr; the cloud / local / standard preset dropdowns are replaced with bundle-scoped pickers (process and filament names from the bundle's contents). The printer is implicit (each `.bbscfg` ships with exactly one)
+4. Slice as normal
+
+The dispatch path is faster than the preset triplet for repeat slicing: instead of resolving three preset refs and uploading three JSONs to the sidecar per slice, Bambuddy just sends `bundle_id + preset names` and the sidecar materialises the JSONs from disk.
+
+The preview slice is also bundle-aware: when a bundle is selected, the per-plate filament discovery slice runs against that bundle's process settings so the displayed gram numbers match what the real print will produce. Without a bundle picked, the preview falls back to the file's embedded settings (slot mapping is unchanged either way &mdash; that's a model property, not a process-settings property).
 
 ---
 
@@ -163,8 +197,10 @@ Check the Bambuddy logs for connection errors to the sidecar URL. Common causes:
 ### Profile resolver errors ("not compatible with printer")
 The fork's profile resolver walks OrcaSlicer's `inherits:` chain to a root system profile and rewrites `from: "User"` &rarr; `from: "system"`. If you exported your preset from a non-stock OrcaSlicer build, the chain may not resolve cleanly. Workaround: re-export the preset from a stock OrcaSlicer install, or open an issue with the upstream profile bundled.
 
-### OrcaSlicer + H2D segfault
-OrcaSlicer 2.3.x has a CLI bug where `--load-settings` segfaults on H2D inputs. The Bambuddy backend automatically retries without `--load-settings` for 3MF inputs (using the file's embedded settings). The job still completes successfully with `used_embedded_settings: true`.
+### OrcaSlicer mid-2026 CLI breakage
+OrcaSlicer 2.3.2 / 2.4.0-dev have known CLI bugs that block slicing many Bambu-authored 3MFs &mdash; see upstream [SoftFever/OrcaSlicer#12426](https://github.com/SoftFever/OrcaSlicer/issues/12426) (segfault on painted multi-extruder files) and [#13386](https://github.com/SoftFever/OrcaSlicer/issues/13386) (parameter-range strict-validation reject). **Bambu Studio is recommended** until the upstream fixes land &mdash; the `bambu-studio-api` service is a drop-in replacement with the same API surface. Switch via **Settings &rarr; Workflow &rarr; Preferred Slicer**.
+
+For 3MF inputs that hit the CLI bugs anyway, Bambuddy automatically retries without `--load-settings` (using the file's embedded settings). The job still completes with `used_embedded_settings: true` flagged in the result.
 
 ---
 
