@@ -108,14 +108,25 @@ Bambuddy connects to your printer via **Developer Mode** - a local connection th
 
 ### Step 4: Enable "Store sent files on external storage"
 
-In **Bambu Studio** or **OrcaSlicer**, enable **"Store sent files on external storage"** so that print files (3MF) are saved to the printer's SD card.
+Bambuddy needs the slicer to leave a copy of the `.gcode.3mf` on the printer's SD card so it can pull thumbnails and slicer metadata back into the archive. There are two places this setting can live, depending on your slicer + firmware combination:
 
-1. Open **Bambu Studio** or **OrcaSlicer**
-2. Go to the **Device** tab for your printer
-3. Enable **"Store sent files on external storage"**
+=== "In the slicer (older Bambu Studio / OrcaSlicer)"
+
+    1. Open **Bambu Studio** or **OrcaSlicer**
+    2. Go to the **Device** tab for your printer
+    3. Enable **"Store sent files on external storage"**
+
+=== "On the printer (newer firmware, e.g. P2S 01.02.00.00 + Bambu Studio 2.6+)"
+
+    Recent firmware/slicer releases moved the toggle out of the slicer onto the printer itself. If the option is missing in Bambu Studio's Device tab, set it on the printer:
+
+    1. On the printer, open **Settings :material-arrow-right: Print Settings** (or **Print Options**, depending on firmware)
+    2. Enable the equivalent **"Store sent files on external storage"** option
+
+    Reported on a P2S in [#1170](https://github.com/maziggy/bambuddy/issues/1170).
 
 !!! info "Why is this needed?"
-    Bambuddy extracts thumbnails and 3D model previews from the 3MF files on the SD card. Without this setting, the files are not stored and Bambuddy cannot generate previews.
+    Bambuddy extracts thumbnails and 3D model previews from the 3MF files on the SD card. Without this setting, every print falls back to a no-3MF archive: no thumbnail, no source 3MF, no slicer metadata.
 
 ### Step 5: Gather Printer Information
 
