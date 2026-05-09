@@ -9,6 +9,26 @@ Bambuddy is packed with features to help you manage your 3D printing workflow. E
 
 ---
 
+## :material-printer-3d-nozzle-outline: NEW: Integrated Slicing
+
+<div class="feature-card highlight" markdown>
+
+### [:material-cursor-pointer: Server-Side Slicing](slicer-api.md)
+
+**Slice STL and 3MF files without a desktop slicer installed.** The optional `slicer-api/` Compose stack runs OrcaSlicer or Bambu Studio headlessly inside Docker; one **Slice** button in File Manager, Archives, and MakerWorld produces a ready-to-print `.gcode.3mf` in the same folder.
+
+- One-click Slice button &mdash; result lands in the library with embedded thumbnail, ready for dispatch
+- **Bambu Studio Preset Bundles (`.bbscfg`)** &mdash; import once, pick a curated printer + process + filament triplet from a dropdown for every slice
+- Multi-plate 3MFs open a plate picker first; multi-color plates render one filament dropdown per AMS slot the print actually uses, auto-matched against your imported / cloud / standard presets by type and colour
+- Toast tracker follows the job from queued to completed across pages, so a long slice never pins the modal
+- Headless-friendly &mdash; runs on a NAS, mini-PC, or RPi 5 without a desktop slicer install
+
+[Setup Guide :material-arrow-right:](slicer-api.md){ .md-button .md-button--primary }
+
+</div>
+
+---
+
 ## :material-printer-3d: Printers & Monitoring
 
 <div class="feature-grid" markdown>
@@ -161,11 +181,6 @@ Import OrcaSlicer presets without Bambu Cloud. Supports .orca_filament, .bbscfg,
 <div class="feature-card" markdown>
 ### [:material-speedometer: K-Profiles](k-profiles.md)
 Pressure advance settings management for optimal print quality.
-</div>
-
-<div class="feature-card" markdown>
-### [:material-printer-3d-nozzle-outline: Server-Side Slicing](slicer-api.md)
-Slice STL/3MF files without a desktop slicer using the optional `slicer-api/` Compose stack. One-click Slice button in File Manager, Archives, and MakerWorld.
 </div>
 
 <div class="feature-card" markdown>
