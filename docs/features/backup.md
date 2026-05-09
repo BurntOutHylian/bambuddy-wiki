@@ -69,10 +69,11 @@ Bambuddy supports multiple Git providers. Choose one below and follow the setup 
 1. **Create a new repository** (can be private)
 2. **Generate a Personal Access Token (PAT)**:
     - Go to **Settings** → **Applications**
-	- Under **Manage Access Tokens**, click 'Generate New Token'
-	- Enter a name for this token and choose `All (public, private, and limited)`
-	- Select `Read and write` under the **repository** permissions
-	- Click **Generate token**
+    - Under **Manage Access Tokens**, expand **Generate New Token**
+    - Enter a name for the token
+    - Under **Repository and organization access**, choose `All (public, private, and limited)`
+    - Under **Repository permissions**, set **repository** to `Read and write`
+    - Click **Generate token**
 3. **Configure in Bambuddy**:
     - Go to **Settings** → **Backup & Restore**
     - Select **Gitea** from the provider dropdown
@@ -90,10 +91,13 @@ Bambuddy supports multiple Git providers. Choose one below and follow the setup 
 1. **Create a new repository** (can be private)
 2. **Generate a Personal Access Token (PAT)**:
     - Go to **Settings** → **Applications**
-	- Click **New access tokens**
-	- Enter a name for this token and choose your preferred Repository and organization access (`All` or `Specific (selecting your Bambuddy backp repo)` is recommended)
-	- Select `Read and write` under the **repository** permissions
-	- Click **Generate Token**
+    - Click **New access token**
+    - Enter a name for the token
+    - Under **Repository and organization access**, choose either:
+        - `All` to allow access to all repositories
+        - `Specific` and select your Bambuddy backup repository
+    - Under **Repository permissions**, set **repository** to `Read and write`
+    - Click **Generate Token**
 3. **Configure in Bambuddy**:
     - Go to **Settings** → **Backup & Restore**
     - Select **Forgejo** from the provider dropdown
